@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="排序," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="快速排序基本思想：快速排序（Quicksort）是对冒泡排序的一种改进。他的基本思想是：通过一趟排序将待排记录分割成独立的两部分，其中一部分的关键字均比另一部分记录的关键字小，则可分别对这两部分记录继续进行快速排序，整个排序过程可以递归进行，以达到整个序列有序的目的。 基本算法步骤：举个栗子：假如现在待排序记录是： 16   2   7   3   8   9 第一步、创建变量 $low 指向记录">
+<meta name="keywords" content="排序">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Quick Sort">
+<meta property="og:url" content="http://yoursite.com/2018/08/07/Algorithm/QuickSort/quick/index.html">
+<meta property="og:site_name" content="Nolan&#39;s Notes">
+<meta property="og:description" content="快速排序基本思想：快速排序（Quicksort）是对冒泡排序的一种改进。他的基本思想是：通过一趟排序将待排记录分割成独立的两部分，其中一部分的关键字均比另一部分记录的关键字小，则可分别对这两部分记录继续进行快速排序，整个排序过程可以递归进行，以达到整个序列有序的目的。 基本算法步骤：举个栗子：假如现在待排序记录是： 16   2   7   3   8   9 第一步、创建变量 $low 指向记录">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-08-16T06:21:30.593Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Quick Sort">
+<meta name="twitter:description" content="快速排序基本思想：快速排序（Quicksort）是对冒泡排序的一种改进。他的基本思想是：通过一趟排序将待排记录分割成独立的两部分，其中一部分的关键字均比另一部分记录的关键字小，则可分别对这两部分记录继续进行快速排序，整个排序过程可以递归进行，以达到整个序列有序的目的。 基本算法步骤：举个栗子：假如现在待排序记录是： 16   2   7   3   8   9 第一步、创建变量 $low 指向记录">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/08/07/Algorithm/QuickSort/quick/"/>
+
+
+
+
+
+  <title>Quick Sort | Nolan's Notes</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Nolan's Notes</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/07/Algorithm/QuickSort/quick/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/self.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">Quick Sort</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-08-07T17:57:00+08:00">
+                2018-08-07
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Algorithm/" itemprop="url" rel="index">
+                    <span itemprop="name">Algorithm</span>
+                  </a>
+                </span>
+
+                
+                
+                  ， 
+                
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Algorithm/QuickSort/" itemprop="url" rel="index">
+                    <span itemprop="name">QuickSort</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="快速排序"><a href="#快速排序" class="headerlink" title="快速排序"></a>快速排序</h1><h3 id="基本思想："><a href="#基本思想：" class="headerlink" title="基本思想："></a>基本思想：</h3><p>快速排序（Quicksort）是对冒泡排序的一种改进。他的基本思想是：通过一趟排序将待排记录分割成独立的两部分，其中一部分的关键字均比另一部分记录的关键字小，则可分别对这两部分记录继续进行快速排序，整个排序过程可以递归进行，以达到整个序列有序的目的。</p>
+<h3 id="基本算法步骤："><a href="#基本算法步骤：" class="headerlink" title="基本算法步骤："></a>基本算法步骤：</h3><p>举个栗子：<br>假如现在待排序记录是：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">6   2   7   3   8   9</span><br></pre></td></tr></table></figure>
+<p>第一步、创建变量 $low 指向记录中的第一个记录，$high 指向最后一个记录，$pivot 作为枢轴赋值为待排序记录的第一个元素（不一定是第一个），这里：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$low = 0;</span><br><span class="line">$high = 5;</span><br><span class="line">$pivot = 6;</span><br></pre></td></tr></table></figure>
+<p>第二步、我们要把所有比 $pivot 小的数移动到 $pivot 的左面，所以我们可以开始寻找比6小的数，从 $high 开始，从右往左找，不断递减变量 $high 的值，我们找到第一个下标 3 的数据比 6 小，于是把数据 3 移到下标 0 的位置（$low 指向的位置），把下标 0 的数据 6 移到下标 3，完成第一次比较：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">//这时候,$high 减小为 3</span><br><span class="line">$low = 0;</span><br><span class="line">$high = 3;</span><br><span class="line">$pivot = 6;</span><br></pre></td></tr></table></figure>
+<p>第三步、我们开始第二次比较，这次要变成找比 $pivot 大的了，而且要从前往后找了。递加变量 $low，发现下标 2 的数据是第一个比 $pivot 大的，于是用下标 2 （$low 指向的位置）的数据 7 和 指向的下标 3 （$high 指向的位置）的数据的 6 做交换，数据状态变成下表：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">3   2   6   7   8   9</span><br><span class="line"></span><br><span class="line">//这时候,$high 减小为 3</span><br><span class="line">$low = 2;</span><br><span class="line">$high = 3;</span><br><span class="line">$pivot = 6;</span><br></pre></td></tr></table></figure>
+<p>完成第二步和第三步我们称为完成一个循环。</p>
+<p>第四步（也就是开启下一个循环）、模仿第二步的过程执行。<br>第五步、模仿第三步的过程执行。</p>
+<p>执行完第二个循环之后，数据状态如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">3   2   6   7   8   9</span><br><span class="line"></span><br><span class="line">//这时候,$high 减小为 3</span><br><span class="line">$low = 2;</span><br><span class="line">$high = 2;</span><br><span class="line">$pivot = 6;</span><br></pre></td></tr></table></figure>
+<p>到了这一步，我们发现 $low 和 $high“碰头”了：他们都指向了下标 2。于是，第一遍比较结束。得到结果如下，凡是 $pivot(=6) 左边的数都比它小，凡是 $pivot 右边的数都比它大。</p>
+<p>然后，对 、$pivot 两边的数据 {3，2} 和 {7，8，9}，再分组分别进行上述的过程，直到不能再分组为止。</p>
+<p>注意：第一遍快速排序不会直接得到最终结果，只会把比k大和比k小的数分到k的两边。为了得到最后结果，需要再次对下标2两边的数组分别执行此步骤，然后再分解数组，直到数组不能再分解为止（只有一个数据），才能得到正确结果。</p>
+<blockquote>
+<p>Partition（）函数才是整段代码的核心，因为该函数的功能是：<br>选取当中的一个关键字，比如选择第一个关键字。然后想尽办法将它放到某个位置，<br>使得它左边的值都比它小，右边的值都比它大，我们将这样的关键字成为枢轴（pivot）。</p>
+</blockquote>
+<h2 id="算法实现："><a href="#算法实现：" class="headerlink" title="算法实现："></a>算法实现：</h2><h3 id="PHP实现"><a href="#PHP实现" class="headerlink" title="PHP实现"></a>PHP实现</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br></pre></td><td class="code"><pre><span class="line">//交换函数</span><br><span class="line">function swap(array &amp;$arr,$a,$b)&#123;</span><br><span class="line">    $tmp = $arr[$a];</span><br><span class="line">    $arr[$a] = $arr[$b];</span><br><span class="line">    $arr[$b] = $tmp;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//选取数组当中的一个关键字，使得它处于数组某个位置时，左边的值比它小，右边的值比它大，该关键字叫做枢轴</span><br><span class="line">//使枢轴记录到位，并返回其所在位置</span><br><span class="line">function Partition(&amp;$arr,$low,$hight)&#123;</span><br><span class="line">    $pivot_value = $arr[$low];  //选取子数组第一个元素作为枢轴</span><br><span class="line">    while ($low &lt; $hight)   //从数组的两端交替向中间扫描（当 $low 和 $high 碰头时结束循环）</span><br><span class="line">    &#123;</span><br><span class="line">        while ($low &lt; $hight &amp;&amp; $arr[$hight] &gt; $pivot_value)  //如果改为$arr[$hight] &gt;= $pivot_value，则最坏情况不但会堕落为O(n*n).而且除了每次比较的消耗外，还会产生n次交互的额外开销</span><br><span class="line">        &#123;</span><br><span class="line">            $hight--;</span><br><span class="line">        &#125;</span><br><span class="line">        swap($arr,$low,$hight);  //终于遇到一个比$pivot小的数，将其放到数组低端</span><br><span class="line">        while ($low &lt; $hight &amp;&amp; $pivot_value &gt; $arr[$low])    //如果改为$pivot_value &gt;= $arr[$low]，则最坏情况不但会堕落为O(n*n).而且除了每次比较的消耗外，还会产生n次交互的额外开销</span><br><span class="line">        &#123;</span><br><span class="line">            $low++;</span><br><span class="line">        &#125;</span><br><span class="line">        swap($arr,$low,$hight);  //终于遇到一个比$pivot大的数，将其放到数组高端</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return $low;  //返回high也行，毕竟最后low和high都是停留在pivot下标处</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function Qsort(array &amp;$arr, $low, $hight)&#123;</span><br><span class="line">    //当 $low &gt;= $hight 时表示不能再进行分组，已经能够得出正确结果了</span><br><span class="line">    if($low &gt;= $hight)&#123;</span><br><span class="line">        return ;</span><br><span class="line">    &#125;</span><br><span class="line">    $pivot_index = Partition($arr,$low,$hight);  //将$arr[$low...$high]一分为二，算出枢轴值</span><br><span class="line">    Qsort($arr,$low,$pivot_index-1);    //对低子表（$pivot左边的记录）进行递归排序</span><br><span class="line">    Qsort($arr,$pivot_index+1,$hight);  //对高子表（$pivot右边的记录）进行递归排序</span><br><span class="line">    </span><br><span class="line">&#125;</span><br><span class="line">//主函数</span><br><span class="line">function QuickSort(array &amp;$arr)&#123;</span><br><span class="line">    $low = 0;</span><br><span class="line">    $hight = count($arr) -1;</span><br><span class="line">    Qsort($arr,$low,$hight);   //主函数中，由于第一遍快速排序是对整个数组排序的，因此开始是 $low=0,$high=count($arr)-1。</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">//调用</span><br><span class="line">echo &quot;&lt;pre&gt;&quot;;</span><br><span class="line">$arr = [6,2,7,3,8,9];</span><br><span class="line">QuickSort($arr);</span><br><span class="line">print_r($arr);</span><br></pre></td></tr></table></figure>
+<h3 id="GOLANG实现"><a href="#GOLANG实现" class="headerlink" title="GOLANG实现"></a>GOLANG实现</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">//选取数组当中的一个关键字，使得它处于数组某个位置时，左边的值比它小，右边的值比它大，该关键字叫做枢轴</span><br><span class="line">//使枢轴记录到位，并返回其所在位置</span><br><span class="line">func Partition(arr []int,low int , hight int) int&#123;</span><br><span class="line">	piovt_value := arr[low]</span><br><span class="line">	for low&lt;hight &#123;</span><br><span class="line">		for low &lt; hight &amp;&amp; arr[hight] &gt; piovt_value&#123;</span><br><span class="line">			hight--</span><br><span class="line">		&#125;</span><br><span class="line">		arr[low],arr[hight] = arr[hight],arr[low]</span><br><span class="line">		for low &lt; hight &amp;&amp; arr[low] &lt;  piovt_value&#123;</span><br><span class="line">			low++</span><br><span class="line">		&#125;</span><br><span class="line">		arr[low],arr[hight] = arr[hight],arr[low]</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	return low</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func Qsort(arr []int , low int ,hight int)  &#123;</span><br><span class="line">	if low &gt;= hight &#123;</span><br><span class="line">		return</span><br><span class="line">	&#125;</span><br><span class="line">	piovt_index := Partition(arr,low,hight)   //将$arr[$low...$high]一分为二，算出枢轴值</span><br><span class="line">	Qsort(arr,low,piovt_index-1)    //对低子表（$pivot左边的记录）进行递归排序</span><br><span class="line">	Qsort(arr,piovt_index+1,hight)  //对高子表（$pivot右边的记录）进行递归排序</span><br><span class="line">&#125;</span><br><span class="line">func QuickSort(arr []int)&#123;</span><br><span class="line">	low :=0</span><br><span class="line">	hight := len(arr)-1</span><br><span class="line">	Qsort(arr,low,hight);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">	arr := [...]int&#123;6,3,8,2,9,1&#125;</span><br><span class="line">	slice := arr[:]</span><br><span class="line">	fmt.Println(slice)</span><br><span class="line">	fmt.Println()</span><br><span class="line">	QuickSort(slice)</span><br><span class="line">	fmt.Println(slice)</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="PHP快速排序，代码简单但性能较低的一种实现"><a href="#PHP快速排序，代码简单但性能较低的一种实现" class="headerlink" title="PHP快速排序，代码简单但性能较低的一种实现"></a>PHP快速排序，代码简单但性能较低的一种实现</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">function quick_sort($arr) &#123;</span><br><span class="line">    //先判断是否需要继续进行</span><br><span class="line">    $length = count($arr);</span><br><span class="line">    if($length &lt;= 1) &#123;</span><br><span class="line">        return $arr;</span><br><span class="line">    &#125;</span><br><span class="line">    //如果没有返回，说明数组内的元素个数 多余1个，需要排序</span><br><span class="line">    //选择一个标尺</span><br><span class="line">    //选择第一个元素</span><br><span class="line">    $base_num = $arr[0];</span><br><span class="line">    //遍历 除了标尺外的所有元素，按照大小关系放入两个数组内</span><br><span class="line">    //初始化两个数组</span><br><span class="line">    $left_array = array();//小于标尺的</span><br><span class="line">    $right_array = array();//大于标尺的</span><br><span class="line">    for($i=1; $i&lt;$length; $i++) &#123;</span><br><span class="line">        if($base_num &gt; $arr[$i]) &#123;</span><br><span class="line">            //放入左边数组</span><br><span class="line">            $left_array[] = $arr[$i];</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            //放入右边</span><br><span class="line">            $right_array[] = $arr[$i];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    //再分别对 左边 和 右边的数组进行相同的排序处理方式</span><br><span class="line">    //递归调用这个函数,并记录结果</span><br><span class="line">    $left_array = quick_sort($left_array);</span><br><span class="line">    $right_array = quick_sort($right_array);</span><br><span class="line">    //合并左边 标尺 右边</span><br><span class="line">    return array_merge($left_array, array($base_num), $right_array);</span><br></pre></td></tr></table></figure>
+<p>参考文档</p>
+<p> <a href="https://blog.csdn.net/baidu_30000217/article/details/53311840" target="_blank" rel="noopener">PHP实现排序算法—-快速排序（Quick Sort）、快排 - CSDN博客</a></p>
+<p> <a href="https://www.cnblogs.com/firstForEver/p/5155393.html" target="_blank" rel="noopener">快速排序的php实现 - 根号五 - 博客园</a></p>
+<p> 大话数据结构</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/排序/" rel="tag"># 排序</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2017/03/12/Linux/Mac find 去除 “Permission denied” 信息/" rel="next" title="Mac find 去除 “Permission denied” 信息">
+                <i class="fa fa-chevron-left"></i> Mac find 去除 “Permission denied” 信息
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2018/08/07/Algorithm/SelectionSort/Selection/" rel="prev" title="SelectionSort">
+                SelectionSort <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/self.jpg"
+               alt="Nolan Chic" />
+          <p class="site-author-name" itemprop="name">Nolan Chic</p>
+           
+              <p class="site-description motion-element" itemprop="description">Action speak louder than words.</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#快速排序"><span class="nav-number">1.</span> <span class="nav-text">快速排序</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#基本思想："><span class="nav-number">1.0.1.</span> <span class="nav-text">基本思想：</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#基本算法步骤："><span class="nav-number">1.0.2.</span> <span class="nav-text">基本算法步骤：</span></a></li></ol></li><li class="nav-item nav-level-2"><a class="nav-link" href="#算法实现："><span class="nav-number">1.1.</span> <span class="nav-text">算法实现：</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#PHP实现"><span class="nav-number">1.1.1.</span> <span class="nav-text">PHP实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#GOLANG实现"><span class="nav-number">1.1.2.</span> <span class="nav-text">GOLANG实现</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#PHP快速排序，代码简单但性能较低的一种实现"><span class="nav-number">1.1.3.</span> <span class="nav-text">PHP快速排序，代码简单但性能较低的一种实现</span></a></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Nolan Chic</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

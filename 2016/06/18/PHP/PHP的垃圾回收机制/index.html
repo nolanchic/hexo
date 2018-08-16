@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="垃圾回收," />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="PHP的垃圾回收机制前言平时听到大神提到的GC ,就是垃圾回收器,全称Garbage Collection.在介绍这个新的GC之前，读者必须先了解PHP中变量的内部存储相关知识，请先阅读变量的内部存储：引用和计数 变量的结构与类型PHP在内核中是通过zval这个结构体来存储变量的，所以写扩展的时候当然也是一样。在Zend/zend.h文件中找到了其定义： 123456struct _zval_st">
+<meta name="keywords" content="垃圾回收">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PHP的垃圾回收机制">
+<meta property="og:url" content="http://yoursite.com/2016/06/18/PHP/PHP的垃圾回收机制/index.html">
+<meta property="og:site_name" content="Nolan&#39;s Notes">
+<meta property="og:description" content="PHP的垃圾回收机制前言平时听到大神提到的GC ,就是垃圾回收器,全称Garbage Collection.在介绍这个新的GC之前，读者必须先了解PHP中变量的内部存储相关知识，请先阅读变量的内部存储：引用和计数 变量的结构与类型PHP在内核中是通过zval这个结构体来存储变量的，所以写扩展的时候当然也是一样。在Zend/zend.h文件中找到了其定义： 123456struct _zval_st">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://note.youdao.com/yws/public/resource/5978c86577f2382879467cc51562a46c/xmlnote/50B46E979DC140F69A194BC68B2540CB/6159">
+<meta property="og:image" content="https://note.youdao.com/yws/public/resource/5978c86577f2382879467cc51562a46c/xmlnote/DA4F603A6F774B74A73EB19995D9154A/6161">
+<meta property="og:image" content="https://note.youdao.com/yws/public/resource/5978c86577f2382879467cc51562a46c/xmlnote/A07BDA83DE984B0BA6111B02ECA175FD/6163">
+<meta property="og:image" content="https://note.youdao.com/yws/public/resource/5978c86577f2382879467cc51562a46c/xmlnote/43D6D4974BFD4D6F9C38BEE0F1BF90F5/6165">
+<meta property="og:image" content="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/WEBRESOURCEc481866e828f6f8e1bc7e377bd4bbf4e/6171">
+<meta property="og:updated_time" content="2018-08-16T06:21:31.247Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="PHP的垃圾回收机制">
+<meta name="twitter:description" content="PHP的垃圾回收机制前言平时听到大神提到的GC ,就是垃圾回收器,全称Garbage Collection.在介绍这个新的GC之前，读者必须先了解PHP中变量的内部存储相关知识，请先阅读变量的内部存储：引用和计数 变量的结构与类型PHP在内核中是通过zval这个结构体来存储变量的，所以写扩展的时候当然也是一样。在Zend/zend.h文件中找到了其定义： 123456struct _zval_st">
+<meta name="twitter:image" content="https://note.youdao.com/yws/public/resource/5978c86577f2382879467cc51562a46c/xmlnote/50B46E979DC140F69A194BC68B2540CB/6159">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2016/06/18/PHP/PHP的垃圾回收机制/"/>
+
+
+
+
+
+  <title>PHP的垃圾回收机制 | Nolan's Notes</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Nolan's Notes</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/06/18/PHP/PHP的垃圾回收机制/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/self.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">PHP的垃圾回收机制</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2016-06-18T10:53:00+08:00">
+                2016-06-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/PHP/" itemprop="url" rel="index">
+                    <span itemprop="name">PHP</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="PHP的垃圾回收机制"><a href="#PHP的垃圾回收机制" class="headerlink" title="PHP的垃圾回收机制"></a>PHP的垃圾回收机制</h1><h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>平时听到大神提到的GC ,就是垃圾回收器,全称Garbage Collection.<br>在介绍这个新的GC之前，读者必须先了解PHP中变量的内部存储相关知识，请先阅读<a href="https://blog.csdn.net/phpkernel/article/details/5732784" target="_blank" rel="noopener">变量的内部存储：引用和计数</a></p>
+<h3 id="变量的结构与类型"><a href="#变量的结构与类型" class="headerlink" title="变量的结构与类型"></a>变量的结构与类型</h3><p>PHP在内核中是通过zval这个结构体来存储变量的，所以写扩展的时候当然也是一样。<br>在Zend/zend.h文件中找到了其定义：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">struct _zval_struct &#123;</span><br><span class="line">    zvalue_value value; /* 变量的值 */</span><br><span class="line">    zend_uint refcount__gc;</span><br><span class="line">    zend_uchar type;    /* 变量当前的数据类型 */</span><br><span class="line">    zend_uchar is_ref__gc;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>快速理解:为方便起见可以直接把zval结构体理解成一个由</p>
+</blockquote>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">value</span><br><span class="line">type</span><br><span class="line">refcount__gc</span><br><span class="line">is_ref__gc</span><br></pre></td></tr></table></figure>
+<blockquote>
+<p>组成的对象就好了，*__gc是管理内存相关的时候会用到的,这里可以先不管。</p>
+</blockquote>
+<h3 id="什么算垃圾"><a href="#什么算垃圾" class="headerlink" title="什么算垃圾"></a>什么算垃圾</h3><p> 首先我们需要定义一下“垃圾”的概念，新的GC负责清理的垃圾是指变量的容器zval还存在，但是又没有任何变量名指向此zval。因此GC判断是否为垃圾的一个重要标准是有没有变量名指向变量容器zval。</p>
+<p>  假设我们有一段PHP代码，使用了一个临时变量$tmp存储了一个字符串，在处理完字符串之后，就不需要这个$tmp变量了，$tmp变量对于我们来说可以算是一个“垃圾”了，但是对于GC来说，$tmp其实并不是一个垃圾，$tmp变量对我们没有意义，但是这个变量实际还存在，$tmp符号依然指向它所对应的zval，GC会认为PHP代码中可能还会使用到此变量，所以不会将其定义为垃圾。</p>
+<p>  那么如果我们在PHP代码中使用完$tmp后，调用unset删除这个变量，那么$tmp是不是就成为一个垃圾了呢。很可惜，GC仍然不认为$tmp是一个垃圾，因为$tmp在unset之后，refcount减少1变成了0(这里假设没有别的变量和$tmp指向相同的zval),这个时候GC会直接将$tmp对应的zval的内存空间释放，$tmp和其对应的zval就根本不存在了。此时的$tmp也不是新的GC所要对付的那种“垃圾”。那么新的GC究竟要对付什么样的垃圾呢，下面我们将生产一个这样的垃圾。  </p>
+<h3 id="顽固垃圾的产生过程"><a href="#顽固垃圾的产生过程" class="headerlink" title="顽固垃圾的产生过程"></a>顽固垃圾的产生过程</h3><p> 如果读者已经阅读了变量内部存储相关的内容，想必对refcount和isref这些变量内部的信息有了一定的了解。这里我们将结合手册中的一个例子来介绍垃圾的产生过程：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">$a = &quot;new string&quot;;</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+<p>在这么简单的一个代码中，$a变量内部存储信息为a: (refcount=1, is_ref=0)=’new string’<br>当把$a赋值给另外一个变量的时候，$a对应的zval的refcount会加1</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">$a = &quot;new string&quot;;</span><br><span class="line"></span><br><span class="line">$b = $a;</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+<p>此时$a和$b变量对应的内部存储信息为</p>
+<p>a,b: (refcount=2, is_ref=0)=’new string’</p>
+<p>当我们用unset删除$b变量的时候，$b对应的zval的refcount会减少1</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">$a = &quot;new string&quot;; //a: (refcount=1, is_ref=0)=&apos;new string&apos;</span><br><span class="line"></span><br><span class="line">$b = $a;                 //a,b: (refcount=2, is_ref=0)=&apos;new string&apos;</span><br><span class="line"></span><br><span class="line">unset($b);              //a: (refcount=1, is_ref=0)=&apos;new string&apos;</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+<p>对于普通的变量来说，这一切似乎很正常，但是在复合类型变量（数组和对象）中，会发生比较有意思的事情：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">$a = array(&apos;meaning&apos; =&gt; &apos;life&apos;, &apos;number&apos; =&gt; 42);</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+<p>a的内部存储信息为:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">a: (refcount=1, is_ref=0)=array (</span><br><span class="line">   &apos;meaning&apos; =&gt; (refcount=1, is_ref=0)=&apos;life&apos;,</span><br><span class="line">   &apos;number&apos; =&gt; (refcount=1, is_ref=0)=42</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>数组变量本身($a)在引擎内部实际上是一个哈希表，这张表中有两个zval项 meaning和number，<br>所以实际上那一行代码中一共生成了3个zval,这3个zval都遵循变量的引用和计数原则，用图来表示:<br><img src="https://note.youdao.com/yws/public/resource/5978c86577f2382879467cc51562a46c/xmlnote/50B46E979DC140F69A194BC68B2540CB/6159" alt=""></p>
+<p> 下面在$a中添加一个元素，并将现有的一个元素的值赋给新的元素:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">$a = array(&apos;meaning&apos; =&gt; &apos;life&apos;, &apos;number&apos; =&gt; 42);</span><br><span class="line"></span><br><span class="line">$a[&apos;life&apos;] = $a[&apos;meaning&apos;];</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+<p>那么$a的内部存储为:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">a: (refcount=1, is_ref=0)=array (</span><br><span class="line">   &apos;meaning&apos; =&gt; (refcount=2, is_ref=0)=&apos;life&apos;,</span><br><span class="line">   &apos;number&apos; =&gt; (refcount=1, is_ref=0)=42,</span><br><span class="line">   &apos;life&apos; =&gt; (refcount=2, is_ref=0)=&apos;life&apos;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>其中的meaning元素和life元素之指向同一个zval的：<br><img src="https://note.youdao.com/yws/public/resource/5978c86577f2382879467cc51562a46c/xmlnote/DA4F603A6F774B74A73EB19995D9154A/6161" alt=""></p>
+<p>现在，如果我们试一下，将数组的引用赋值给数组中的一个元素，有意思的事情就发生了：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">$a = array(&apos;one&apos;);</span><br><span class="line"></span><br><span class="line">$a[] = &amp;$a;</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+<p>这样$a数组就有两个元素，一个索引为0，值为字符one,另外一个索引为1，为$a自身的引用，内部存储如下:</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">a: (refcount=2, is_ref=1)=array (</span><br><span class="line">   0 =&gt; (refcount=1, is_ref=0)=&apos;one&apos;,</span><br><span class="line">   1 =&gt; (refcount=2, is_ref=1)=…</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
+<p>“…”表示1指向a自身，是一个环形引用：<br><img src="https://note.youdao.com/yws/public/resource/5978c86577f2382879467cc51562a46c/xmlnote/A07BDA83DE984B0BA6111B02ECA175FD/6163" alt=""></p>
+<p>这个时候我们对$a进行unset,那么$a会从符号表中删除，同时$a指向的zval的refcount减少1</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">$a = array(&apos;one&apos;);</span><br><span class="line"></span><br><span class="line">$a[] = &amp;$a;</span><br><span class="line"></span><br><span class="line">unset($a);</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
+<p>那么问题也就产生了，$a已经不在符号表中了，用户无法再访问此变量，但是$a之前指向的zval的refcount变为1而不是0，因此不能被回收，这样产生了内存泄露：</p>
+<p><img src="https://note.youdao.com/yws/public/resource/5978c86577f2382879467cc51562a46c/xmlnote/43D6D4974BFD4D6F9C38BEE0F1BF90F5/6165" alt=""></p>
+<p>这样，这么一个zval就成为了一个真是意义的垃圾了，新的GC要做的工作就是清理这种垃圾。</p>
+<h3 id="为解决这种垃圾，PHP5-3以后的GC"><a href="#为解决这种垃圾，PHP5-3以后的GC" class="headerlink" title="为解决这种垃圾，PHP5.3以后的GC"></a>为解决这种垃圾，PHP5.3以后的GC</h3><p> 在PHP5.3版本中，使用了专门GC机制清理垃圾，在之前的版本中是没有专门的GC，那么垃圾产生的时候，没有办法清理，内存就白白浪费掉了。在PHP5.3源代码中多了以下文件:{PHPSRC}/Zend/zend_gc.h {PHPSRC}/Zend/zend_gc.c, 这里就是新的GC的实现。</p>
+<h3 id="GC算法"><a href="#GC算法" class="headerlink" title="GC算法"></a>GC算法</h3><p> 在较新的PHP手册中有简单的介绍新的GC使用的垃圾清理算法，这个算法名为 Concurrent Cycle Collection in Reference Counted Systems ， 这里不详细介绍此算法，根据手册中的内容来先简单的介绍一下思路：</p>
+<h4 id="判断处理过程"><a href="#判断处理过程" class="headerlink" title="判断处理过程"></a>判断处理过程</h4><ul>
+<li><p>1：如果一个zval的refcount增加，那么此zval还在使用，不属于垃圾</p>
+</li>
+<li><p>2：如果一个zval的refcount减少到0， 那么zval可以被释放掉，不属于垃圾</p>
+</li>
+<li><p>3：如果一个zval的refcount减少之后大于0，那么此zval还不能被释放，此zval可能成为一个垃圾</p>
+</li>
+</ul>
+<p>只有在准则3下，GC才会把zval收集起来，然后通过新的算法来判断此zval是否为垃圾。那么如何判断这么一个变量是否为真正的垃圾呢？</p>
+<p>简单的说，就是对此zval中的每个元素进行一次refcount减1操作，操作完成之后，如果zval的refcount=0，那么这个zval就是一个垃圾。首先引用手册中的一张图:</p>
+<p><img src="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/WEBRESOURCEc481866e828f6f8e1bc7e377bd4bbf4e/6171" alt=""></p>
+<p>A：为了避免每次变量的refcount减少的时候都调用GC的算法进行垃圾判断，此算法会先把所有前面准则3情况下的zval节点放入一个节点(root)缓冲区(root buffer)，并且将这些zval节点标记成紫色，同时算法必须确保每一个zval节点在缓冲区中之出现一次。当缓冲区被节点塞满的时候，GC才开始开始对缓冲区中的zval节点进行垃圾判断。</p>
+<p>B：当缓冲区满了之后，算法以深度优先对每一个节点所包含的zval进行减1操作，为了确保不会对同一个zval的refcount重复执行减1操作，一旦zval的refcount减1之后会将zval标记成灰色。需要强调的是，这个步骤中，起初节点zval本身不做减1操作，但是如果节点zval中包含的zval又指向了节点zval（环形引用），那么这个时候需要对节点zval进行减1操作。</p>
+<p>C：算法再次以深度优先判断每一个节点包含的zval的值，如果zval的refcount等于0，那么将其标记成白色(代表垃圾)，如果zval的refcount大于0，那么将对此zval以及其包含的zval进行refcount加1操作，这个是对非垃圾的还原操作，同时将这些zval的颜色变成黑色（zval的默认颜色属性）</p>
+<p>D：遍历zval节点，将C中标记成白色的节点zval释放掉。</p>
+<p>来个白话文版的：<br>例如：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">    $a = [&apos;one&apos;]; --- zval_a（将$a对应的zval，命名为zval_a）</span><br><span class="line">    $a[] = &amp;$a; --- step1</span><br><span class="line">    unset($a);  --- step2</span><br></pre></td></tr></table></figure>
+<p>为进行unset之前(step1)，进行算法计算，对这个数组中的所有元素（索引0和索引1）的zval的refcount进行减1操作，由于索引1对应的就是zval_a，所以这个时候zval_a的refcount应该变成了1，这样说明zval_a不是一个垃圾不进行回收。</p>
+<p>当执行unset的时候(step2)，进行算法计算，由于环形引用，上文得出会有垃圾的结构体，zval_a的refcount是1(zval_a中的索引1指向zval_a)，用算法对数组中的所有元素（索引0和索引1）的zval的refcount进行减1操作，这样zval_a的refcount就会变成0，于是就认为zval_a是一个需要回收的垃圾。</p>
+<p>算法总的套路:<strong>对于一个包含环形引用的数组，对数组中包含的每个元素的zval进行减1操作，之后如果发现数组自身的zval的refcount变成了0，那么可以判断这个数组是一个垃圾。</strong></p>
+<h3 id="算法优化配置"><a href="#算法优化配置" class="headerlink" title="算法优化配置"></a>算法优化配置</h3><p>可能会发现，每次都进行这样的操作好像会影响性能，是的，php做事情套路都是走批量的原则。</p>
+<p>申请内存也是申请一大块，仅使用当前的一小部分剩下的等下回再用，避免多次申请。</p>
+<p>这个gc算法也是这样，会有一个缓冲区的概念，等缓冲区满了才会一次性去给清掉。</p>
+<ul>
+<li>开关配置</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">php.ini中设置 zend.enable_gc 项来开启或则关闭GC。</span><br></pre></td></tr></table></figure>
+<ul>
+<li><p>缓冲区配置<br>缓冲区默认可以放10,000个节点，当缓冲区满了才会清理。可以通过修改Zend/zend_gc.c中的<code>GC_ROOT_BUFFER_MAX_ENTRIES</code> 来改变这个数值，需要重新编译链接PHP</p>
+</li>
+<li><p>关键函数</p>
+</li>
+</ul>
+<p><code>gc_enable()</code> : 开启GC</p>
+<p><code>gc_disable()</code> : 关闭GC</p>
+<p><code>gc_collect_cycles()</code> : 在节点缓冲区未满的情况下强制执行垃圾分析算法</p>
+<h3 id="涉及到垃圾回收的知识点"><a href="#涉及到垃圾回收的知识点" class="headerlink" title="涉及到垃圾回收的知识点"></a>涉及到垃圾回收的知识点</h3><ul>
+<li>unset函数</li>
+</ul>
+<p>unset只是断开一个变量到一块内存区域的连接，同时将该内存区域的引用计数-1；内存是否回收主要还是看refcount是否到0了，以及gc算法判断。</p>
+<ul>
+<li>= null 操作</li>
+</ul>
+<p>a=null是直接将a 指向的数据结构置空，同时将其引用计数归0。</p>
+<ul>
+<li>脚本执行结束</li>
+</ul>
+<p>脚本执行结束，该脚本中使用的所有内存都会被释放，不论是否有引用环。</p>
+<h5 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h5><p><a href="http://www.php.net/manual/en/features.gc.php" target="_blank" rel="noopener">参考文档</a><br><a href="https://www.cnblogs.com/orlion/p/5350844.html" target="_blank" rel="noopener">参考文档</a><br><a href="https://blog.csdn.net/u011957758/article/details/76864400" target="_blank" rel="noopener">参考文档</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/垃圾回收/" rel="tag"># 垃圾回收</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/02/07/NGINX/NGINX防止CC攻击/" rel="prev" title="NGINX防止CC攻击">
+                NGINX防止CC攻击 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/self.jpg"
+               alt="Nolan Chic" />
+          <p class="site-author-name" itemprop="name">Nolan Chic</p>
+           
+              <p class="site-description motion-element" itemprop="description">Action speak louder than words.</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#PHP的垃圾回收机制"><span class="nav-number">1.</span> <span class="nav-text">PHP的垃圾回收机制</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#前言"><span class="nav-number">1.0.1.</span> <span class="nav-text">前言</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#变量的结构与类型"><span class="nav-number">1.0.2.</span> <span class="nav-text">变量的结构与类型</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#什么算垃圾"><span class="nav-number">1.0.3.</span> <span class="nav-text">什么算垃圾</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#顽固垃圾的产生过程"><span class="nav-number">1.0.4.</span> <span class="nav-text">顽固垃圾的产生过程</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#为解决这种垃圾，PHP5-3以后的GC"><span class="nav-number">1.0.5.</span> <span class="nav-text">为解决这种垃圾，PHP5.3以后的GC</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#GC算法"><span class="nav-number">1.0.6.</span> <span class="nav-text">GC算法</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#判断处理过程"><span class="nav-number">1.0.6.1.</span> <span class="nav-text">判断处理过程</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#算法优化配置"><span class="nav-number">1.0.7.</span> <span class="nav-text">算法优化配置</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#涉及到垃圾回收的知识点"><span class="nav-number">1.0.8.</span> <span class="nav-text">涉及到垃圾回收的知识点</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#参考文档"><span class="nav-number">1.0.8.0.1.</span> <span class="nav-text">参考文档</span></a></li></ol></li></ol></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Nolan Chic</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>

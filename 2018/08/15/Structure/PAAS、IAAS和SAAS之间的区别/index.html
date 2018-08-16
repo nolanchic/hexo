@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.2" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.2" />
+
+
+
+
+
+
+<meta name="description" content="PAAS、IAAS和SAAS之间的区别云计算的发展这几年大家也看到了，非常火热。各种新概念层出不穷，如果你不是专业人士，这些新概念让你一脸茫然是很正常的。 所以最近比较多的小伙伴向我咨询一个问题，那就是PAAS、IAAS和SAAS之间的区别？正好今天小编比较闲，就在这为大家解释一下。当然首先请允许小编从专业的角度来解释一下PAAS、IAAS和SAAS之间的概念区别。 用户通过Internet 可以">
+<meta property="og:type" content="article">
+<meta property="og:title" content="PAAS、IAAS和SAAS之间的区别">
+<meta property="og:url" content="http://yoursite.com/2018/08/15/Structure/PAAS、IAAS和SAAS之间的区别/index.html">
+<meta property="og:site_name" content="Nolan&#39;s Notes">
+<meta property="og:description" content="PAAS、IAAS和SAAS之间的区别云计算的发展这几年大家也看到了，非常火热。各种新概念层出不穷，如果你不是专业人士，这些新概念让你一脸茫然是很正常的。 所以最近比较多的小伙伴向我咨询一个问题，那就是PAAS、IAAS和SAAS之间的区别？正好今天小编比较闲，就在这为大家解释一下。当然首先请允许小编从专业的角度来解释一下PAAS、IAAS和SAAS之间的概念区别。 用户通过Internet 可以">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/D35B66AD8ECD4FF4BA1C4D0B4CD6F815/6178">
+<meta property="og:image" content="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/21B2BE5FC02248B98707D887CBE62985/6176">
+<meta property="og:image" content="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/00CA16113EA047458FEB9DA953AF5DB8/6180">
+<meta property="og:image" content="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/AF31DAF214B041FDA55AC0F935628CF8/6182">
+<meta property="og:image" content="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/45251A7FA5DA46E8A9D332CE64CB7AF1/6184">
+<meta property="og:image" content="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/A62BEFD4DC4A45368A2801B4543ED1EC/6186">
+<meta property="og:image" content="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/0F58763E7B674980B35A0DE4DB271F81/6188">
+<meta property="og:updated_time" content="2018-08-16T06:21:31.347Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="PAAS、IAAS和SAAS之间的区别">
+<meta name="twitter:description" content="PAAS、IAAS和SAAS之间的区别云计算的发展这几年大家也看到了，非常火热。各种新概念层出不穷，如果你不是专业人士，这些新概念让你一脸茫然是很正常的。 所以最近比较多的小伙伴向我咨询一个问题，那就是PAAS、IAAS和SAAS之间的区别？正好今天小编比较闲，就在这为大家解释一下。当然首先请允许小编从专业的角度来解释一下PAAS、IAAS和SAAS之间的概念区别。 用户通过Internet 可以">
+<meta name="twitter:image" content="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/D35B66AD8ECD4FF4BA1C4D0B4CD6F815/6178">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2018/08/15/Structure/PAAS、IAAS和SAAS之间的区别/"/>
+
+
+
+
+
+  <title>PAAS、IAAS和SAAS之间的区别 | Nolan's Notes</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Nolan's Notes</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/15/Structure/PAAS、IAAS和SAAS之间的区别/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/self.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">PAAS、IAAS和SAAS之间的区别</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-08-15T21:22:33+08:00">
+                2018-08-15
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Structure/" itemprop="url" rel="index">
+                    <span itemprop="name">Structure</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h1 id="PAAS、IAAS和SAAS之间的区别"><a href="#PAAS、IAAS和SAAS之间的区别" class="headerlink" title="PAAS、IAAS和SAAS之间的区别"></a>PAAS、IAAS和SAAS之间的区别</h1><p>云计算的发展这几年大家也看到了，非常火热。各种新概念层出不穷，如果你不是专业人士，这些新概念让你一脸茫然是很正常的。</p>
+<p>所以最近比较多的小伙伴向我咨询一个问题，那就是PAAS、IAAS和SAAS之间的区别？正好今天小编比较闲，就在这为大家解释一下。当然首先请允许小编从专业的角度来解释一下PAAS、IAAS和SAAS之间的概念区别。</p>
+<p>用户通过Internet 可以从完善的计算机基础设施获得服务。这类服务可以称为基础设施即服务，这就是通常所说的IAAS。而相应的另外两种服务就是平台即服务和软件即服务。平台及服务提供了用户可以访问的完整或部分的应用程序开发,我们通常称之为PAAS。软件及服务则提供了完整的可直接使用的应用程序，我们通常称之为SAAS。如果把他们看作层次结构，那么第一层自然叫做IAAS，第二层就是PAAS，第三层也就是SAAS。好了专业的就说到这里，想必很多小伙伴还是一知半解。那么下面开始说人话。</p>
+<p>假设、如果、假如你是个吃货，而且还非常喜欢披萨这种食品，那么这个问题就很好解释了。一个吃货是怎样吃到披萨的呢?大致有下面的几种方法：</p>
+<h3 id="1-完全自己做"><a href="#1-完全自己做" class="headerlink" title="1. 完全自己做"></a>1. 完全自己做</h3><p>不好意思，如果自己做这实在是个麻烦事，你得准备很多东西，比如餐桌、披萨面团。。。。。等等，如下图所示：</p>
+<p><img src="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/D35B66AD8ECD4FF4BA1C4D0B4CD6F815/6178" alt=""></p>
+<h3 id="2-买好速食披萨回家自己做着吃"><a href="#2-买好速食披萨回家自己做着吃" class="headerlink" title="2. 买好速食披萨回家自己做着吃"></a>2. 买好速食披萨回家自己做着吃</h3><p>你只需要从披萨店里买回成品，回家烘焙就好了，在自己的餐桌上吃。和自己在家做不同，你需要一个披萨供应商。如下图所示：</p>
+<p><img src="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/21B2BE5FC02248B98707D887CBE62985/6176" alt=""></p>
+<h3 id="3-打电话叫外卖将披萨送到家中"><a href="#3-打电话叫外卖将披萨送到家中" class="headerlink" title="3. 打电话叫外卖将披萨送到家中"></a>3. 打电话叫外卖将披萨送到家中</h3><p>打个电话，披萨就送到家门口。如下图所示：</p>
+<p><img src="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/00CA16113EA047458FEB9DA953AF5DB8/6180" alt=""></p>
+<h4 id="4-在披萨店吃披萨"><a href="#4-在披萨店吃披萨" class="headerlink" title="4.在披萨店吃披萨"></a>4.在披萨店吃披萨</h4><p>你什么都不需要准备，连餐桌也是披萨店的。如下图所示：</p>
+<p><img src="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/AF31DAF214B041FDA55AC0F935628CF8/6182" alt=""></p>
+<h4 id="总结一下"><a href="#总结一下" class="headerlink" title="总结一下"></a>总结一下</h4><p>是不是如下图所示几种途径都可以吃到披萨：</p>
+<p><img src="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/45251A7FA5DA46E8A9D332CE64CB7AF1/6184" alt=""></p>
+<p>现在我们从披萨中回到云计算的概念来。假设你是一家超级牛逼的技术公司，根本不需要别人提供服务，你拥有基础设施、应用等等其它一切，你把它们分为三层：基础设施(infrastructure)、平台(platform)和软件(software)，如下图：</p>
+<p><img src="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/A62BEFD4DC4A45368A2801B4543ED1EC/6186" alt=""></p>
+<p>这其实就是云计算的三个分层，基础设施在最下端，平台在中间，软件在顶端，分别是Infrastructure-as-a-Service(IAAS)，Platform-as-a-Service(PAAS)，Software-as-a-Service(SAAS)，别的一些“软”的层可以在这些层上面添加。</p>
+<p>而你的公司什么都有，现在所处的状态叫本地部署(On-Premises)，就像在自己家做披萨一样。如果你想在办公室或者公司的网站上运行一些企业应用，你需要去买服务器，或者别的高昂的硬件来控制本地应用，让你的业务运行起来，这就叫本地部署。</p>
+<p>假如你突然有一天想明白了，只是为了吃上披萨，为什么非要自己做呢?于是，准备考虑一家云服务供应商，这个云服务供应商能提供哪些服务呢?其所能提供的云服务也就是云计算的三个分层：PAAS、IAAS和SAAS，就像披萨店提供三种服务：买成品回家做、外卖和到披萨店吃。如下图：</p>
+<p><img src="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/0F58763E7B674980B35A0DE4DB271F81/6188" alt=""></p>
+<p>IAAS: Infrastructure-as-a-Service(基础设施即服务)，有了IAAS，你可以将硬件外包到别的地方去。IAAS公司会提供场外服务器，存储和网络硬件，你可以租用。节省了维护成本和办公场地，公司可以在任何时候利用这些硬件来运行其应用。一些大的IAAS公司包括Amazon, Microsoft, VMWare, Rackspace和Red Hat.不过这些公司又都有自己的专长，比如Amazon和微软给你提供的不只是IAAS，他们还会将其计算能力出租给你来host你的网站。</p>
+<p>PAAS: Platform-as-a-Service(平台即服务)，第二层就是所谓的PAAS，某些时候也叫做中间件。你公司所有的开发都可以在这一层进行，节省了时间和资源。</p>
+<p>PAAS公司在网上提供各种开发和分发应用的解决方案，比如虚拟服务器和操作系统。这节省了你在硬件上的费用，也让分散的工作室之间的合作变得更加容易。网页应用管理，应用设计，应用虚拟主机，存储，安全以及应用开发协作工具等。</p>
+<p>一些大的PAAS提供者有Google App Engine,Microsoft Azure，Force.com,Heroku，Engine Yard。最近兴起的公司有AppFog,Mendix和Standing Cloud.</p>
+<p>SAAS: Software-as-a-Service(软件即服务)，第三层也就是所谓SAAS。这一层是和你的生活每天接触的一层，大多是通过网页浏览器来接入。任何一个远程服务器上的应用都可以通过网络来运行，就是SAAS了。你消费的服务完全是从网页如Netflix,MOG,Google Apps,Box.net,Dropbox或者苹果的iCloud那里进入这些分类。尽管这些网页服务是用作商务和娱乐或者两者都有，但这也算是云技术的一部分。一些用作商务的SaaS应用包括Citrix的Go To Meeting，Cisco的WebEx，Salesforce的CRM，ADP，Workday和SuccessFactors。</p>
+<p>参考文档</p>
+<p><a href="http://www.ruanyifeng.co" target="_blank" rel="noopener">IaaS,PaaS,SaaS 的区别 - 阮一峰的网络日志</a></p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/08/07/Algorithm/BubbleSort/bubble/" rel="next" title="BubbleSort">
+                <i class="fa fa-chevron-left"></i> BubbleSort
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/self.jpg"
+               alt="Nolan Chic" />
+          <p class="site-author-name" itemprop="name">Nolan Chic</p>
+           
+              <p class="site-description motion-element" itemprop="description">Action speak louder than words.</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/archives/">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-categories">
+              <a href="/categories/index.html">
+                <span class="site-state-item-count">9</span>
+                <span class="site-state-item-name">分类</span>
+              </a>
+            </div>
+          
+
+          
+            
+            
+            <div class="site-state-item site-state-tags">
+              <a href="/tags/index.html">
+                <span class="site-state-item-count">3</span>
+                <span class="site-state-item-name">标签</span>
+              </a>
+            </div>
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#PAAS、IAAS和SAAS之间的区别"><span class="nav-number">1.</span> <span class="nav-text">PAAS、IAAS和SAAS之间的区别</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1-完全自己做"><span class="nav-number">1.0.1.</span> <span class="nav-text">1. 完全自己做</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2-买好速食披萨回家自己做着吃"><span class="nav-number">1.0.2.</span> <span class="nav-text">2. 买好速食披萨回家自己做着吃</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3-打电话叫外卖将披萨送到家中"><span class="nav-number">1.0.3.</span> <span class="nav-text">3. 打电话叫外卖将披萨送到家中</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#4-在披萨店吃披萨"><span class="nav-number">1.0.3.1.</span> <span class="nav-text">4.在披萨店吃披萨</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#总结一下"><span class="nav-number">1.0.3.2.</span> <span class="nav-text">总结一下</span></a></li></ol></li></ol></li></ol></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright" >
+  
+  &copy; 
+  <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Nolan Chic</span>
+</div>
+
+
+<div class="powered-by">
+  由 <a class="theme-link" href="https://hexo.io">Hexo</a> 强力驱动
+</div>
+
+<div class="theme-info">
+  主题 -
+  <a class="theme-link" href="https://github.com/iissnan/hexo-theme-next">
+    NexT.Pisces
+  </a>
+</div>
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.2"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.2"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.2"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.2"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.2"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
