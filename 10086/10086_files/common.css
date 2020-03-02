@@ -1,0 +1,142 @@
+/* mask */
+html {
+  display: block;
+}
+* {
+  margin: 0;
+  padding: 0;
+}
+.mask-wrap {
+  position: fixed;
+  z-index: 9999;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  display: block;
+}
+.mask-background {
+  position: absolute;
+  z-index: 10000;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  background: #000;
+  filter: alpha(opacity=50);
+  opacity: 0.5;
+  -moz-opacity: 0.5;
+  -khtml-opacity: 0.5;
+  -webkit-opacity: 0.5;
+  display: none;
+}
+.loadingimg {
+  position: absolute;
+  z-index: 103;
+  width: 32px;
+  height: 32px;
+  left: 50%;
+  bottom: 50%;
+  margin: -16px 0 0 -16px;
+  display: block;
+  background: url("../images/loading.jpg") no-repeat;
+  background-size: 100%;
+}
+/* ϵͳ��æ*/
+.error-wrap {
+  position: fixed;
+  z-index: 1;
+  float: left;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  color: #888;
+  font-size: 14px;
+  display: none;
+  font-family: Microsoft YaHei;
+}
+.error-wrapcontent {
+  position: absolute;
+  z-index: 2;
+  width: 100%;
+  left: 0;
+  top: 40%;
+  margin: -33px 0 0 0;
+}
+.error-wrapimg {
+  text-align: center;
+  height: 51px;
+  background: url("../images/ic_loading_failure.png") no-repeat center;
+  background-size: 47px;
+}
+.error-wraptext {
+  text-align: center;
+  color: #666;
+  padding: 0 5%;
+  font-family: Microsoft YaHei;
+}
+/* ϵͳ������ */
+.errorAlert-wrap {
+  position: fixed;
+  z-index: 99990;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  display: none;
+}
+.errorAlert {
+  position: absolute;
+  z-index: 10000;
+  width: 90%;
+  left: 5%;
+  bottom: 20px;
+}
+.errorAlert-backgroud {
+  position: absolute;
+  z-index: 1010;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  filter: alpha(opacity=50);
+  -moz-opacity: 0.5;
+  -khtml-opacity: 0.5;
+  opacity: 0.5;
+  border-radius: 4px;
+  -moz-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  -webkit-border-radius: 4px;
+}
+.errorAlert-text {
+  position: relative;
+  z-index: 1020;
+  padding: 2% 5%;
+  color: #fff;
+  text-align: center;
+  line-height: 30px;
+  font-size: 0.875rem;
+}
+.onlineService {
+  padding: 0.2rem 0;
+  position: fixed;
+  left: 0px;
+  bottom: 0px;
+  right: 0px;
+  border-top: 1px solid #e5e5e5;
+  text-align: center;
+  z-index: 2;
+  background-color: #fff;
+}
+.onlineService span {
+  background: url("../images/online.png") no-repeat top center;
+  background-size: 0.88rem;
+  padding-top: 1rem;
+  display: inline-block;
+  font-size: 0.65rem;
+  color: #666666;
+}
+.error-bg2 {
+  background-image: url("../images/icon.png");
+  background-size: 90px;
+  height: 125px;
+}

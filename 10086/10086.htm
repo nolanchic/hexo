@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<!-- saved from url=(0060)https://gd.10086.cn/gmcch5/webpage/roamInquire/newIndex.html -->
+<html lang="en" style="font-size: 72px;"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <title>疫情期间行程查询</title>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0, user-scalable=no" name="viewport">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style,content=black">
+    <link rel="stylesheet" type="text/css" href="./10086_files/common.css">
+    <link rel="stylesheet" href="./10086_files/common.css">
+    <link rel="stylesheet" href="./10086_files/newIndex.css">
+    <SCRIPT language=JavaScript>
+function tick() {
+var years,months,days,hours, minutes, seconds;
+var intYears,intMonths,intDays,intHours, intMinutes, intSeconds;
+var today;
+today = new Date(); //系统当前时间
+intYears = today.getFullYear(); //得到年份,getFullYear()比getYear()更普适
+intMonths = today.getMonth() + 1; //得到月份，要加1
+intDays = today.getDate(); //得到日期
+intHours = today.getHours(); //得到小时 
+intMinutes = today.getMinutes(); //得到分钟
+intSeconds = today.getSeconds(); //得到秒钟
+years = intYears + "年"; 
+ 
+if(intMonths < 10 ){
+months = "0" + intMonths +"月";
+} else {
+months = intMonths +"月";
+}
+if(intDays < 10 ){
+days = "0" + intDays +"日 ";
+} else {
+days = intDays + "日 ";
+}
+if (intHours == 0) {
+hours = "00:";
+} else if (intHours < 10) {
+hours = "0" + intHours+":";
+} else {
+hours = intHours + ":";
+}
+if (intMinutes < 10) {
+minutes = "0"+intMinutes+":";
+} else {
+minutes = intMinutes+":";
+}
+if (intSeconds < 10) {
+seconds = "0"+intSeconds+" ";
+} else {
+seconds = intSeconds+" ";
+}
+timeString = years+months+days+hours+minutes+seconds;
+Clock.innerHTML = timeString;
+window.setTimeout("tick();", 3600000);
+}
+window.onload = tick;
+</SCRIPT>
+</head>
+<body style="">
+<div id="app" style="display: block;">
+    <img class="title_bg" src="./10086_files/new-bg-t.png" alt="">
+    <div class="main">
+        <div class="res_wrapper">
+            <div class="res">
+                <div class="res_inner">
+                    <div class="res_title">尊敬的<span class="show_phone">159****71240</span>客户</div>
+                    <div class="res_title_line"></div>
+                    <div class="res_data">
+                        <div class="res_data_1">
+                            <div class="res_data_t1">根据您于<span class="data_time" style="color: rgb(62, 98, 255);"><SPAN id="Clock"></SPAN></span>的授权查询，您于近14天内：</div>
+                            <!-- <div class="res_data_t1">根据您于<span class="data_time" style="color: rgb(62, 98, 255);">2020年03月02日 13:04:32</span>的授权查询，您于近14天内：</div> -->
+                            <div class="res_data_box">到达过或途经<span class="data1">广东(广州)</span></div>
+                        </div>
+                        <div class="res_data_2">
+                            <div class="res_data_t2">您于近15-30天内：</div>
+                            <div class="res_data_box">到达过或途经<span class="data2">广东(肇庆、广州)</span></div>
+                        </div>
+
+                    </div>
+                    <div class="res_foot">抗击疫情，中国移动和您一起努力</div>
+                </div>
+            </div>
+            <div class="foot_tip">
+                <p>1、此服务为公益服务，提供查询时间范围内的用户返程复工证明数据，查询结果仅供参考，不作为最终判定依据。</p>
+                <p>
+                    2、请查询人员注意数据安全。
+                </p>
+                <p>3、以上查询信息不排除国内相邻城市边界漫游可能；另因漫游地运营商话单延迟等原因，国际及港澳台漫游地区的到访信息可能存在滞后性。</p>
+                <p>4、请严格遵守《中华人民共和国网络安全法》规定，不得利用本工具提供的数据从事侵害他人名誉、隐私等活动。</p>
+            </div>
+        </div>
+    </div>
+    <!-- 浏览器打开弹出框 end -->
+    <div class="alert-div guidance">
+        <div class="alert_inner">
+            <div class="modal">
+                <div class="modal_center">系统繁忙，暂不能提供漫游地查询服务，请您稍后再试，谢谢。</div>
+                <div class="modal_foot">
+                    <div class="modal_foot_confirm" onclick="closeAlert(&#39;.guidance&#39;)">知道了</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="./10086_files/jquery-3.2.1.min.js"></script>
+<script src="./10086_files/jweixin-1.2.0.js"></script>
+<script src="./10086_files/comm.js"></script>
+<script src="./10086_files/loadModule.js"></script><div class="mask-wrap" style="display: none;"><div class="mask-background" style="display: none;"></div><div class="loadingimg" style="display: none;"></div></div>
+<script src="./10086_files/newIndex.js"></script>
+<script src="./10086_files/gd_sdc_load_wap.js"></script>
+
+
+</body></html>
