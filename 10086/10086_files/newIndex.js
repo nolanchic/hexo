@@ -85,7 +85,7 @@ function showAlert(obj) {
     $(obj).show();
 }
 
-var api = {
+/*var api = {
     index: {
         servicename: 'GMCCAPP_704_014_001_002',
         Request: function () {
@@ -189,7 +189,7 @@ var api = {
         }
     }
 };
-
+*/
 /************************************************分享部分***************************/
 var shareIcon = `https://gd.10086.cn/${Utils.service.getServ()}/webpage/roamInquire/images/icon.jpg`;// 分享后展示的一张图片
 
