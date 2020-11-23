@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="AOF日志：宕机了，Redis如何避免数据丢失？目前，Redis 的持久化主要有两大机制，即 AOF（Append Only File）日志和 RDB 快照 AOF 日志是如何实现的？我们比较熟悉的是数据库的写前日志（Write Ahead Log, WAL），也就是说，在实际写数据前，先把修改的数据记到日志文件中，以便故障时进行恢复不过，AOF 日志正好相反，它是写后日志，“写后”的意思是 Re">
+<meta property="og:type" content="article">
+<meta property="og:title" content="4、 AOF日志：宕机了，Redis如何避免数据丢失？">
+<meta property="og:url" content="http://yoursite.com/2020/06/23/4%E3%80%81-AOF%E6%97%A5%E5%BF%97%EF%BC%9A%E5%AE%95%E6%9C%BA%E4%BA%86%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1%EF%BC%9F/index.html">
+<meta property="og:site_name" content="Nolan&#39;s Notes">
+<meta property="og:description" content="AOF日志：宕机了，Redis如何避免数据丢失？目前，Redis 的持久化主要有两大机制，即 AOF（Append Only File）日志和 RDB 快照 AOF 日志是如何实现的？我们比较熟悉的是数据库的写前日志（Write Ahead Log, WAL），也就是说，在实际写数据前，先把修改的数据记到日志文件中，以便故障时进行恢复不过，AOF 日志正好相反，它是写后日志，“写后”的意思是 Re">
+<meta property="og:locale">
+<meta property="og:image" content="https://i.loli.net/2020/11/18/JeLgyhWprl7FzAS.png">
+<meta property="og:image" content="https://i.loli.net/2020/11/18/NPRJSeAOXDflvHC.png">
+<meta property="og:image" content="https://i.loli.net/2020/11/18/LJMPt1kmizIFgy3.png">
+<meta property="og:image" content="https://i.loli.net/2020/11/18/56blyvH82IcUFa7.png">
+<meta property="article:published_time" content="2020-06-23T11:12:00.000Z">
+<meta property="article:modified_time" content="2020-11-23T15:27:43.526Z">
+<meta property="article:author" content="Nolan Chic">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2020/11/18/JeLgyhWprl7FzAS.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/06/23/4%E3%80%81-AOF%E6%97%A5%E5%BF%97%EF%BC%9A%E5%AE%95%E6%9C%BA%E4%BA%86%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1%EF%BC%9F/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>4、 AOF日志：宕机了，Redis如何避免数据丢失？ | Nolan's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Nolan's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/23/4%E3%80%81-AOF%E6%97%A5%E5%BF%97%EF%BC%9A%E5%AE%95%E6%9C%BA%E4%BA%86%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1%EF%BC%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          4、 AOF日志：宕机了，Redis如何避免数据丢失？
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-06-23 19:12:00" itemprop="dateCreated datePublished" datetime="2020-06-23T19:12:00+08:00">2020-06-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-23 23:27:43" itemprop="dateModified" datetime="2020-11-23T23:27:43+08:00">2020-11-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="AOF日志：宕机了，Redis如何避免数据丢失？"><a href="#AOF日志：宕机了，Redis如何避免数据丢失？" class="headerlink" title="AOF日志：宕机了，Redis如何避免数据丢失？"></a>AOF日志：宕机了，Redis如何避免数据丢失？</h2><p>目前，Redis 的持久化主要有两大机制，即 AOF（Append Only File）日志和 RDB 快照</p>
+<h4 id="AOF-日志是如何实现的？"><a href="#AOF-日志是如何实现的？" class="headerlink" title="AOF 日志是如何实现的？"></a>AOF 日志是如何实现的？</h4><p>我们比较熟悉的是数据库的写前日志（Write Ahead Log, WAL），也就是说，在实际写数据前，先把修改的数据记到日志文件中，以便故障时进行恢复<br>不过，AOF 日志正好相反，它是写后日志，“写后”的意思是 Redis 是先执行命令，把数据写入内存，然后才记录日志，如下图所示：</p>
+<p><img src="https://i.loli.net/2020/11/18/JeLgyhWprl7FzAS.png" alt="image.png"></p>
+<h4 id="AOF-为什么要先执行命令再记日志呢？"><a href="#AOF-为什么要先执行命令再记日志呢？" class="headerlink" title="AOF 为什么要先执行命令再记日志呢？"></a>AOF 为什么要先执行命令再记日志呢？</h4><p>传统数据库的日志，例如 redo log（重做日志），记录的是修改后的数据，而 AOF 里记录的是 Redis 收到的每一条命令，这些命令是以文本形式保存的。</p>
+<p>但是，为了避免额外的检查开销，Redis 在向 AOF 里面记录日志的时候，并不会先去对这些命令进行语法检查。所以，如果先记日志再执行命令的话，日志中就有可能记录了错误的命令，Redis 在使用日志恢复数据时，就可能会出错。</p>
+<p>而写后日志这种方式，就是先让系统执行命令，只有命令能执行成功，才会被记录到日志中，否则，系统就会直接向客户端报错。所以，Redis 使用写后日志这一方式的一大好处是，可以避免出现记录错误命令的情况。</p>
+<p>除此之外，AOF 还有一个好处：<strong>它是在命令执行后才记录日志，所以不会阻塞当前的写操作</strong>。</p>
+<h4 id="AOF-也有两个潜在的风险"><a href="#AOF-也有两个潜在的风险" class="headerlink" title="AOF 也有两个潜在的风险"></a>AOF 也有两个潜在的风险</h4><p>首先，如果刚执行完一个命令，还没有来得及记日志就宕机了，那么这个命令和相应的数据就有丢失的风险。如果此时 Redis 是用作缓存，还可以从后端数据库重新读入数据进行恢复，但是，如果 Redis 是直接用作数据库的话，此时，因为命令没有记入日志，所以就无法用日志进行恢复了。</p>
+<p>其次，AOF 虽然避免了对当前命令的阻塞，但可能会给下一个操作带来阻塞风险。这是因为，AOF 日志也是在主线程中执行的，如果在把日志文件写入磁盘时，磁盘写压力大，就会导致写盘很慢，进而导致后续的操作也无法执行了。</p>
+<h3 id="三种写回策略"><a href="#三种写回策略" class="headerlink" title="三种写回策略"></a>三种写回策略</h3><p>AOF 机制给我们提供了三个选择，也就是 AOF 配置项 appendfsync 的三个可选值</p>
+<ul>
+<li>Always，同步写回：每个写命令执行完，立马同步地将日志写回磁盘；</li>
+<li>Everysec，每秒写回：每个写命令执行完，只是先把日志写到 AOF 文件的内存缓冲区，每隔一秒把缓冲区中的内容写入磁盘；</li>
+<li>No，操作系统控制的写回：每个写命令执行完，只是先把日志写到 AOF 文件的内存缓冲区，由操作系统决定何时将缓冲区内容写回磁盘。</li>
+</ul>
+<p>针对避免主线程阻塞和减少数据丢失问题，这三种写回策略都无法做到两全其美</p>
+<ul>
+<li>“同步写回”可以做到基本不丢数据，但是它在每一个写命令后都有一个慢速的落盘操作，不可避免地会影响主线程性能；</li>
+<li>虽然“操作系统控制的写回”在写完缓冲区后，就可以继续执行后续的命令，但是落盘的时机已经不在 Redis 手中了，只要 AOF 记录没有写回磁盘，一旦宕机对应的数据就丢失了；</li>
+<li>“每秒写回”采用一秒写回一次的频率，避免了“同步写回”的性能开销，虽然减少了对系统性能的影响，但是如果发生宕机，上一秒内未落盘的命令操作仍然会丢失。所以，这只能算是，在避免影响主线程性能和避免数据丢失两者间取了个折中。</li>
+</ul>
+<p><img src="https://i.loli.net/2020/11/18/NPRJSeAOXDflvHC.png" alt="image.png"></p>
+<p>到这里，我们就可以根据系统对高性能和高可靠性的要求，来选择使用哪种写回策略了。总结一下就是：想要获得高性能，就选择 No 策略；如果想要得到高可靠性保证，就选择 Always 策略；如果允许数据有一点丢失，又希望性能别受太大影响的话，那么就选择 Everysec 策略。</p>
+<p>按照系统的性能需求选定了写回策略，并不是“高枕无忧”了。毕竟，AOF 是以文件的形式在记录接收到的所有写命令。随着接收的写命令越来越多，AOF 文件会越来越大。这也就意味着，我们一定要小心 AOF 文件过大带来的性能问题。</p>
+<p>这里的“性能问题”，主要在于以下三个方面：一是，文件系统本身对文件大小有限制，无法保存过大的文件；二是，如果文件太大，之后再往里面追加命令记录的话，效率也会变低；三是，如果发生宕机，AOF 中记录的命令要一个个被重新执行，用于故障恢复，如果日志文件太大，整个恢复过程就会非常缓慢，这就会影响到 Redis 的正常使用。</p>
+<h3 id="AOF-重写机制"><a href="#AOF-重写机制" class="headerlink" title="AOF 重写机制"></a>AOF 重写机制</h3><p>为什么重写机制可以把日志文件变小呢? 实际上，重写机制具有“多变一”功能。所谓的“多变一”，也就是说，旧日志文件中的多条命令，在重写后的新日志中变成了一条命令。</p>
+<p>AOF 文件是以追加的方式，逐一记录接收到的写命令的。当一个键值对被多条写命令反复修改时，AOF 文件会记录相应的多条命令。但是，在重写的时候，是根据这个键值对当前的最新状态，为它生成对应的写入命令。这样一来，一个键值对在重写日志中只用一条命令就行了，而且，在日志恢复时，只用执行这条命令，就可以直接完成这个键值对的写入了。</p>
+<p><img src="https://i.loli.net/2020/11/18/LJMPt1kmizIFgy3.png" alt="image.png"></p>
+<p>虽然 AOF 重写后，日志文件会缩小，但是，要把整个数据库的最新数据的操作日志都写回磁盘，仍然是一个非常耗时的过程。这时，我们就要继续关注另一个问题了：重写会不会阻塞主线程？</p>
+<h3 id="AOF-重写会阻塞吗"><a href="#AOF-重写会阻塞吗" class="headerlink" title="AOF 重写会阻塞吗?"></a>AOF 重写会阻塞吗?</h3><p>和 AOF 日志由主线程写回不同，重写过程是由后台子进程 bgrewriteaof 来完成的，这也是为了避免阻塞主线程，导致数据库性能下降。</p>
+<p><strong>一个拷贝，两处日志</strong></p>
+<p>“一个拷贝”就是指<br>每次执行重写时，主线程 fork 出后台的 bgrewriteaof 子进程。此时，fork 会把主线程的内存拷贝一份给 bgrewriteaof 子进程，fork子进程时，子进程是会拷贝父进程的页表，即虚实映射关系，而不会拷贝物理内存。子进程复制了父进程页表，也能共享访问父进程的内存数据了，此时，类似于有了父进程的所有内存数据。然后，bgrewriteaof 子进程就可以在不影响主线程的情况下，逐一把拷贝的数据写成操作，记入重写日志。</p>
+<p><strong>两处日志</strong><br>因为主线程未阻塞，仍然可以处理新来的操作。此时，如果有写操作，第一处日志就是指正在使用的 AOF 日志，Redis 会把这个操作写到它的缓冲区</p>
+<p>第二处日志，就是指新的 AOF 重写日志。这个操作也会被写到重写日志的缓冲区。这样，重写日志也不会丢失最新的操作。等到拷贝数据的所有操作记录重写完成后，重写日志记录的这些最新操作也会写入新的 AOF 文件，以保证数据库最新状态的记录。此时，我们就可以用新的 AOF 文件替代旧文件了。</p>
+<p><img src="https://i.loli.net/2020/11/18/56blyvH82IcUFa7.png" alt="image.png"></p>
+<p>每次 AOF 重写时，Redis 会先执行一个内存拷贝，用于重写；然后，使用两个日志保证在重写过程中，新写入的数据不会丢失。而且，因为 Redis 采用额外的线程进行数据重写，所以，这个过程并不会阻塞主线程。</p>
+<h5 id="为什么主线程和AOF重写缓冲连起来了呢？"><a href="#为什么主线程和AOF重写缓冲连起来了呢？" class="headerlink" title="为什么主线程和AOF重写缓冲连起来了呢？"></a>为什么主线程和AOF重写缓冲连起来了呢？</h5><p>主线程收到写命令后，会把这个写命令写入AOF重写缓冲区，这是由主线程来写的，所以连线在一起了：）</p>
+<h4 id="关于huge-page"><a href="#关于huge-page" class="headerlink" title="关于huge page"></a>关于huge page</h4><p>Huge page。这个特性大家在使用Redis也要注意。Huge page对提升TLB命中率比较友好，因为在相同的内存容量下，使用huge page可以减少页表项，TLB就可以缓存更多的页表项，能减少TLB miss的开销。</p>
+<p>但是，这个机制对于Redis这种喜欢用fork的系统来说，的确不太友好，尤其是在Redis的写入请求比较多的情况下。因为fork后，父进程修改数据采用写时复制，复制的粒度为一个内存页。如果只是修改一个256B的数据，父进程需要读原来的内存页，然后再映射到新的物理地址写入。一读一写会造成读写放大。如果内存页越大（例如2MB的大页），那么读写放大也就越严重，对Redis性能造成影响。</p>
+<p>Huge page在实际使用Redis时是建议关掉的。</p>
+<h4 id="AOF-日志重写的时候，是由-bgrewriteaof-子进程来完成的，不用主线程参与，非阻塞也是指子进程的执行不阻塞主线程。但是，这个重写过程有没有其他潜在的阻塞风险呢？如果有的话，会在哪里阻塞？"><a href="#AOF-日志重写的时候，是由-bgrewriteaof-子进程来完成的，不用主线程参与，非阻塞也是指子进程的执行不阻塞主线程。但是，这个重写过程有没有其他潜在的阻塞风险呢？如果有的话，会在哪里阻塞？" class="headerlink" title="AOF 日志重写的时候，是由 bgrewriteaof 子进程来完成的，不用主线程参与，非阻塞也是指子进程的执行不阻塞主线程。但是，这个重写过程有没有其他潜在的阻塞风险呢？如果有的话，会在哪里阻塞？"></a>AOF 日志重写的时候，是由 bgrewriteaof 子进程来完成的，不用主线程参与，非阻塞也是指子进程的执行不阻塞主线程。但是，这个重写过程有没有其他潜在的阻塞风险呢？如果有的话，会在哪里阻塞？</h4><blockquote>
+<p>a、fork子进程，fork这个瞬间一定是会阻塞主线程的，fork采用操作系统提供的写时复制(Copy On Write)机制，就是为了避免一次性拷贝大量内存数据给子进程造成的长时间阻塞问题，但fork子进程需要拷贝进程必要的数据结构，其中有一项就是拷贝内存页表（虚拟内存和物理内存的映射索引表），这个拷贝过程会消耗大量CPU资源，拷贝完成之前整个进程是会阻塞的，阻塞时间取决于整个实例的内存大小，实例越大，内存页表越大，fork阻塞时间越久。拷贝内存页表完成后，子进程与父进程指向相同的内存地址空间，也就是说此时虽然产生了子进程，但是并没有申请与父进程相同的内存大小。那什么时候父子进程才会真正内存分离呢？“写时复制”顾名思义，就是在写发生时，才真正拷贝内存真正的数据，这个过程中，父进程也可能会产生阻塞的风险，就是下面介绍的场景。</p>
+</blockquote>
+<blockquote>
+<p>b、fork出的子进程指向与父进程相同的内存地址空间，此时子进程就可以执行AOF重写，把内存中的所有数据写入到AOF文件中。但是此时父进程依旧是会有流量写入的，如果父进程操作的是一个已经存在的key，那么这个时候父进程就会真正拷贝这个key对应的内存数据，申请新的内存空间，这样逐渐地，父子进程内存数据开始分离，父子进程逐渐拥有各自独立的内存空间。因为内存分配是以页为单位进行分配的，默认4k，如果父进程此时操作的是一个bigkey，重新申请大块内存耗时会变长，可能会产阻塞风险。另外，如果操作系统开启了内存大页机制(Huge Page，页面大小2M)，那么父进程申请内存时阻塞的概率将会大大提高，所以在Redis机器上需要关闭Huge Page机制。Redis每次fork生成RDB或AOF重写完成后，都可以在Redis log中看到父进程重新申请了多大的内存空间。</p>
+</blockquote>
+<h4 id="AOF-重写也有一个重写日志，为什么它不共享使用-AOF-本身的日志呢？"><a href="#AOF-重写也有一个重写日志，为什么它不共享使用-AOF-本身的日志呢？" class="headerlink" title="AOF 重写也有一个重写日志，为什么它不共享使用 AOF 本身的日志呢？"></a>AOF 重写也有一个重写日志，为什么它不共享使用 AOF 本身的日志呢？</h4><blockquote>
+<p>AOF重写不复用AOF本身的日志，一个原因是父子进程写同一个文件必然会产生竞争问题，控制竞争就意味着会影响父进程的性能。二是如果AOF重写过程中失败了，那么原本的AOF文件相当于被污染了，无法做恢复使用。所以Redis AOF重写一个新文件，重写失败的话，直接删除这个文件就好了，不会对原先的AOF文件产生影响。等重写完成之后，直接替换旧文件即可。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/21/3%E3%80%81Redis%E9%AB%98%E6%80%A7%E8%83%BDIO%E6%A8%A1%E5%9E%8B%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8D%95%E7%BA%BF%E7%A8%8BRedis%E8%83%BD%E9%82%A3%E4%B9%88%E5%BF%AB%EF%BC%9F/" rel="prev" title="3、Redis高性能IO模型：为什么单线程Redis能那么快？">
+      <i class="fa fa-chevron-left"></i> 3、Redis高性能IO模型：为什么单线程Redis能那么快？
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/25/5%E3%80%81%E5%86%85%E5%AD%98%E5%BF%AB%E7%85%A7%EF%BC%9A%E5%AE%95%E6%9C%BA%E5%90%8E%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D%EF%BC%9F/" rel="next" title="5、内存快照：宕机后，Redis如何实现快速恢复？">
+      5、内存快照：宕机后，Redis如何实现快速恢复？ <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#AOF%E6%97%A5%E5%BF%97%EF%BC%9A%E5%AE%95%E6%9C%BA%E4%BA%86%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">AOF日志：宕机了，Redis如何避免数据丢失？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#AOF-%E6%97%A5%E5%BF%97%E6%98%AF%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E7%9A%84%EF%BC%9F"><span class="nav-number">1.0.1.</span> <span class="nav-text">AOF 日志是如何实现的？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AOF-%E4%B8%BA%E4%BB%80%E4%B9%88%E8%A6%81%E5%85%88%E6%89%A7%E8%A1%8C%E5%91%BD%E4%BB%A4%E5%86%8D%E8%AE%B0%E6%97%A5%E5%BF%97%E5%91%A2%EF%BC%9F"><span class="nav-number">1.0.2.</span> <span class="nav-text">AOF 为什么要先执行命令再记日志呢？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AOF-%E4%B9%9F%E6%9C%89%E4%B8%A4%E4%B8%AA%E6%BD%9C%E5%9C%A8%E7%9A%84%E9%A3%8E%E9%99%A9"><span class="nav-number">1.0.3.</span> <span class="nav-text">AOF 也有两个潜在的风险</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%89%E7%A7%8D%E5%86%99%E5%9B%9E%E7%AD%96%E7%95%A5"><span class="nav-number">1.1.</span> <span class="nav-text">三种写回策略</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AOF-%E9%87%8D%E5%86%99%E6%9C%BA%E5%88%B6"><span class="nav-number">1.2.</span> <span class="nav-text">AOF 重写机制</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#AOF-%E9%87%8D%E5%86%99%E4%BC%9A%E9%98%BB%E5%A1%9E%E5%90%97"><span class="nav-number">1.3.</span> <span class="nav-text">AOF 重写会阻塞吗?</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E4%B8%BB%E7%BA%BF%E7%A8%8B%E5%92%8CAOF%E9%87%8D%E5%86%99%E7%BC%93%E5%86%B2%E8%BF%9E%E8%B5%B7%E6%9D%A5%E4%BA%86%E5%91%A2%EF%BC%9F"><span class="nav-number">1.3.0.1.</span> <span class="nav-text">为什么主线程和AOF重写缓冲连起来了呢？</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%85%B3%E4%BA%8Ehuge-page"><span class="nav-number">1.3.1.</span> <span class="nav-text">关于huge page</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AOF-%E6%97%A5%E5%BF%97%E9%87%8D%E5%86%99%E7%9A%84%E6%97%B6%E5%80%99%EF%BC%8C%E6%98%AF%E7%94%B1-bgrewriteaof-%E5%AD%90%E8%BF%9B%E7%A8%8B%E6%9D%A5%E5%AE%8C%E6%88%90%E7%9A%84%EF%BC%8C%E4%B8%8D%E7%94%A8%E4%B8%BB%E7%BA%BF%E7%A8%8B%E5%8F%82%E4%B8%8E%EF%BC%8C%E9%9D%9E%E9%98%BB%E5%A1%9E%E4%B9%9F%E6%98%AF%E6%8C%87%E5%AD%90%E8%BF%9B%E7%A8%8B%E7%9A%84%E6%89%A7%E8%A1%8C%E4%B8%8D%E9%98%BB%E5%A1%9E%E4%B8%BB%E7%BA%BF%E7%A8%8B%E3%80%82%E4%BD%86%E6%98%AF%EF%BC%8C%E8%BF%99%E4%B8%AA%E9%87%8D%E5%86%99%E8%BF%87%E7%A8%8B%E6%9C%89%E6%B2%A1%E6%9C%89%E5%85%B6%E4%BB%96%E6%BD%9C%E5%9C%A8%E7%9A%84%E9%98%BB%E5%A1%9E%E9%A3%8E%E9%99%A9%E5%91%A2%EF%BC%9F%E5%A6%82%E6%9E%9C%E6%9C%89%E7%9A%84%E8%AF%9D%EF%BC%8C%E4%BC%9A%E5%9C%A8%E5%93%AA%E9%87%8C%E9%98%BB%E5%A1%9E%EF%BC%9F"><span class="nav-number">1.3.2.</span> <span class="nav-text">AOF 日志重写的时候，是由 bgrewriteaof 子进程来完成的，不用主线程参与，非阻塞也是指子进程的执行不阻塞主线程。但是，这个重写过程有没有其他潜在的阻塞风险呢？如果有的话，会在哪里阻塞？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#AOF-%E9%87%8D%E5%86%99%E4%B9%9F%E6%9C%89%E4%B8%80%E4%B8%AA%E9%87%8D%E5%86%99%E6%97%A5%E5%BF%97%EF%BC%8C%E4%B8%BA%E4%BB%80%E4%B9%88%E5%AE%83%E4%B8%8D%E5%85%B1%E4%BA%AB%E4%BD%BF%E7%94%A8-AOF-%E6%9C%AC%E8%BA%AB%E7%9A%84%E6%97%A5%E5%BF%97%E5%91%A2%EF%BC%9F"><span class="nav-number">1.3.3.</span> <span class="nav-text">AOF 重写也有一个重写日志，为什么它不共享使用 AOF 本身的日志呢？</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Nolan Chic</p>
+  <div class="site-description" itemprop="description">Action speak louder than words.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Nolan Chic</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

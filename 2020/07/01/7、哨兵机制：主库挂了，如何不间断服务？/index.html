@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="哨兵机制：主库挂了，如何不间断服务？主从库集群模式。在这个模式下，如果从库发生故障了，客户端可以继续向主库或其他从库发送请求，进行相关的操作。但是如果主库发生故障了，那就直接会影响到从库的同步，因为从库没有相应的主库可以进行数据复制操作了。  无论是写服务中断，还是从库无法进行数据同步，都是不能接受的。 所以，如果主库挂了，我们就需要运行一个新主库，比如说把一个从库切换为主库，把它当成主库。 这就">
+<meta property="og:type" content="article">
+<meta property="og:title" content="7、哨兵机制：主库挂了，如何不间断服务？">
+<meta property="og:url" content="http://yoursite.com/2020/07/01/7%E3%80%81%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%EF%BC%9A%E4%B8%BB%E5%BA%93%E6%8C%82%E4%BA%86%EF%BC%8C%E5%A6%82%E4%BD%95%E4%B8%8D%E9%97%B4%E6%96%AD%E6%9C%8D%E5%8A%A1%EF%BC%9F/index.html">
+<meta property="og:site_name" content="Nolan&#39;s Notes">
+<meta property="og:description" content="哨兵机制：主库挂了，如何不间断服务？主从库集群模式。在这个模式下，如果从库发生故障了，客户端可以继续向主库或其他从库发送请求，进行相关的操作。但是如果主库发生故障了，那就直接会影响到从库的同步，因为从库没有相应的主库可以进行数据复制操作了。  无论是写服务中断，还是从库无法进行数据同步，都是不能接受的。 所以，如果主库挂了，我们就需要运行一个新主库，比如说把一个从库切换为主库，把它当成主库。 这就">
+<meta property="og:locale">
+<meta property="og:image" content="https://i.loli.net/2020/11/19/GE6cCb9iQzU7PBm.png">
+<meta property="og:image" content="https://i.loli.net/2020/11/19/pZgD4e8fmblo7G2.png">
+<meta property="og:image" content="https://i.loli.net/2020/11/19/PbyCS9HfQvWNJhK.png">
+<meta property="og:image" content="https://i.loli.net/2020/11/19/iVegnLK2dtyqUAQ.png">
+<meta property="og:image" content="https://i.loli.net/2020/11/19/X1hZig32aLfwPBS.png">
+<meta property="article:published_time" content="2020-07-01T15:29:00.000Z">
+<meta property="article:modified_time" content="2020-11-23T15:30:15.091Z">
+<meta property="article:author" content="Nolan Chic">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2020/11/19/GE6cCb9iQzU7PBm.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/07/01/7%E3%80%81%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%EF%BC%9A%E4%B8%BB%E5%BA%93%E6%8C%82%E4%BA%86%EF%BC%8C%E5%A6%82%E4%BD%95%E4%B8%8D%E9%97%B4%E6%96%AD%E6%9C%8D%E5%8A%A1%EF%BC%9F/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>7、哨兵机制：主库挂了，如何不间断服务？ | Nolan's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Nolan's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/01/7%E3%80%81%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%EF%BC%9A%E4%B8%BB%E5%BA%93%E6%8C%82%E4%BA%86%EF%BC%8C%E5%A6%82%E4%BD%95%E4%B8%8D%E9%97%B4%E6%96%AD%E6%9C%8D%E5%8A%A1%EF%BC%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          7、哨兵机制：主库挂了，如何不间断服务？
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-07-01 23:29:00" itemprop="dateCreated datePublished" datetime="2020-07-01T23:29:00+08:00">2020-07-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="哨兵机制：主库挂了，如何不间断服务？"><a href="#哨兵机制：主库挂了，如何不间断服务？" class="headerlink" title="哨兵机制：主库挂了，如何不间断服务？"></a>哨兵机制：主库挂了，如何不间断服务？</h2><p>主从库集群模式。在这个模式下，如果从库发生故障了，客户端可以继续向主库或其他从库发送请求，进行相关的操作。<br>但是如果主库发生故障了，那就直接会影响到从库的同步，因为从库没有相应的主库可以进行数据复制操作了。</p>
+<p><img src="https://i.loli.net/2020/11/19/GE6cCb9iQzU7PBm.png" alt="image.png"></p>
+<p>无论是写服务中断，还是从库无法进行数据同步，都是不能接受的。</p>
+<p>所以，如果主库挂了，我们就需要运行一个新主库，比如说把一个从库切换为主库，把它当成主库。</p>
+<p>这就涉及到三个问题：</p>
+<ul>
+<li><p>1、主库真的挂了吗？</p>
+</li>
+<li><p>2、该选择哪个从库作为主库？</p>
+</li>
+<li><p>3、怎么把新主库的相关信息通知给从库和客户端呢？</p>
+</li>
+</ul>
+<h3 id="哨兵机制的基本流程"><a href="#哨兵机制的基本流程" class="headerlink" title="哨兵机制的基本流程"></a>哨兵机制的基本流程</h3><p>哨兵主要负责的就是三个任务：</p>
+<ul>
+<li>监控</li>
+<li>选主（选择主库）</li>
+<li>通知</li>
+</ul>
+<h5 id="监控"><a href="#监控" class="headerlink" title="监控"></a>监控</h5><p>监控是指哨兵进程在运行时，周期性地给所有的主从库发送 <code>PING</code> 命令，检测它们是否仍然在线运行。</p>
+<p>如果从库没有在规定时间内响应哨兵的 <code>PING</code> 命令，哨兵就会把它标记为“下线状态”；</p>
+<p>同样，如果主库也没有在规定时间内响应哨兵的 <code>PING</code> 命令，哨兵就会判定主库下线，然后开始<strong>自动切换主库</strong>的流程。</p>
+<h5 id="选主"><a href="#选主" class="headerlink" title="选主"></a>选主</h5><p>主库挂了以后，哨兵就需要从很多个从库里，按照一定的规则选择一个从库实例，把它作为新的主库。这一步完成后，现在的集群里就有了新主库。</p>
+<h5 id="通知"><a href="#通知" class="headerlink" title="通知"></a>通知</h5><p>在执行通知任务时，哨兵会把新主库的连接信息发给其他从库，让它们执行 replicaof 命令，和新主库建立连接，并进行数据复制。</p>
+<p>同时，哨兵会把新主库的连接信息通知给客户端，让它们把请求操作发到新主库上。</p>
+<p><img src="https://i.loli.net/2020/11/19/pZgD4e8fmblo7G2.png" alt="image.png"></p>
+<p>在这三个任务中，通知任务相对来说比较简单，哨兵只需要把新主库信息发给从库和客户端，让它们和新主库建立连接就行，并不涉及决策的逻辑。</p>
+<p>但是，在监控和选主这两个任务中，哨兵需要做出两个决策：</p>
+<ul>
+<li><p>在监控任务中，哨兵需要判断主库是否处于下线状态；</p>
+</li>
+<li><p>在选主任务中，哨兵也要决定选择哪个从库实例作为主库。</p>
+</li>
+</ul>
+<h3 id="主观下线和客观下线"><a href="#主观下线和客观下线" class="headerlink" title="主观下线和客观下线"></a>主观下线和客观下线</h3><p><strong>哨兵进程会使用 PING 命令检测它自己和主、从库的网络连接情况，用来判断实例的状态</strong>。如果哨兵发现主库或从库对 PING 命令的响应超时了，那么，哨兵就会先把它标记为“主观下线”。</p>
+<p>在判断主库是否下线时，不能由一个哨兵说了算，只有大多数的哨兵实例，都判断主库已经“主观下线”了，主库才会被标记为“客观下线”，这个叫法也是表明主库下线成为一个客观事实了。这个判断原则就是：少数服从多数。同时，这会进一步触发哨兵开始主从切换流程。</p>
+<p><img src="https://i.loli.net/2020/11/19/PbyCS9HfQvWNJhK.png" alt="image.png"></p>
+<h3 id="如何选定新主库？"><a href="#如何选定新主库？" class="headerlink" title="如何选定新主库？"></a>如何选定新主库？</h3><p>一般来说，我把哨兵选择新主库的过程称为“筛选 + 打分”。简单来说，我们在多个从库中，先按照<strong>一定的筛选条件</strong>，把不符合条件的从库去掉。</p>
+<p>然后，我们再按照<strong>一定的规则</strong>，给剩下的从库逐个打分，将得分最高的从库选为新主库，如下图所示：</p>
+<p><img src="https://i.loli.net/2020/11/19/iVegnLK2dtyqUAQ.png" alt="image.png"></p>
+<h5 id="筛选的条件"><a href="#筛选的条件" class="headerlink" title="筛选的条件"></a>筛选的条件</h5><ul>
+<li>除了要检查从库的当前在线状态，还要判断它之前的网络连接状态</li>
+<li>从库总是和主库断连，而且断连次数超出了一定的阈值，我们就有理由相信，这个从库的网络状况并不是太好，就可以把这个从库筛掉了</li>
+</ul>
+<blockquote>
+<p>down-after-milliseconds * 10。其中，down-after-milliseconds 是我们认定主从库断连的最大连接超时时间。如果在 down-after-milliseconds 毫秒内，主从节点都没有通过网络联系上，我们就可以认为主从节点断连了。如果发生断连的次数超过了 10 次，就说明这个从库的网络状况不好，不适合作为新主库。</p>
+</blockquote>
+<h5 id="一定的规则"><a href="#一定的规则" class="headerlink" title="一定的规则"></a>一定的规则</h5><p>可以分别按照三个规则依次进行三轮打分，这三个规则分别是</p>
+<ul>
+<li>从库优先级</li>
+<li>从库复制进度</li>
+<li>从库 ID 号</li>
+</ul>
+<p>只要在某一轮中，有从库得分最高，那么它就是主库了，选主过程到此结束。如果没有出现得分最高的从库，那么就继续进行下一轮。</p>
+<h4 id="第一轮：优先级最高的从库得分高。"><a href="#第一轮：优先级最高的从库得分高。" class="headerlink" title="第一轮：优先级最高的从库得分高。"></a>第一轮：优先级最高的从库得分高。</h4><p>用户可以通过 slave-priority 配置项，给不同的从库设置不同优先级。<br>比如，你有两个从库，它们的内存大小不一样，你可以手动给内存大的实例设置一个高优先级。<br>在选主时，哨兵会给优先级高的从库打高分，如果有一个从库优先级最高，那么它就是新主库了。如果从库的优先级都一样，那么哨兵开始第二轮打分。</p>
+<h4 id="第二轮：和旧主库同步程度最接近的从库得分高。"><a href="#第二轮：和旧主库同步程度最接近的从库得分高。" class="headerlink" title="第二轮：和旧主库同步程度最接近的从库得分高。"></a>第二轮：和旧主库同步程度最接近的从库得分高。</h4><p>这个规则的依据是，如果选择和旧主库同步最接近的那个从库作为主库，那么，这个新主库上就有最新的数据。</p>
+<p>在这个过程中，主库会用 master_repl_offset 记录当前的最新写操作在 repl_backlog_buffer 中的位置，而从库会用 slave_repl_offset 这个值记录当前的复制进度。</p>
+<p>此时，我们想要找的从库，它的 slave_repl_offset 需要最接近 master_repl_offset。如果在所有从库中，有从库的 slave_repl_offset 最接近 master_repl_offset，那么它的得分就最高，可以作为新主库。</p>
+<p>旧主库的 master_repl_offset 是 1000，从库 1、2 和 3 的 slave_repl_offset 分别是 950、990 和 900，那么，从库 2 就应该被选为新主库。</p>
+<p><img src="https://i.loli.net/2020/11/19/X1hZig32aLfwPBS.png" alt="image.png"></p>
+<p>如果有两个从库的 slave_repl_offset 值大小是一样的, 我们就需要给它们进行第三轮打分了</p>
+<h4 id="第三轮：ID-号小的从库得分高。"><a href="#第三轮：ID-号小的从库得分高。" class="headerlink" title="第三轮：ID 号小的从库得分高。"></a>第三轮：ID 号小的从库得分高。</h4><p>每个实例都会有一个 ID，这个 ID 就类似于这里的从库的编号。目前，Redis 在选主库时，有一个默认的规定：<strong>在优先级和复制进度都相同的情况下，ID 号最小的从库得分最高，会被选为新主库</strong>。</p>
+<p>哨兵会按照在线状态、网络状态，筛选过滤掉一部分不符合要求的从库，然后，依次按照优先级、复制进度、ID 号大小再对剩余的从库进行打分，只要有得分最高的从库出现，就把它选为新主库。</p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><p>主从集群的数据同步，是数据可靠的基础保证；而在主库发生故障时，自动的主从切换是服务不间断的关键支撑。</p>
+<p>Redis 的哨兵机制自动完成了以下三大功能，从而实现了主从库的自动切换，可以降低 Redis 集群的运维开销：</p>
+<ul>
+<li>监控：监控主库运行状态，并判断主库是否客观下线；</li>
+<li>选主：在主库客观下线后，选取新主库；</li>
+<li>通知：选出新主库后，通知从库和客户端。</li>
+</ul>
+<p>为了降低误判率，在实际应用时，哨兵机制通常采用多实例的方式进行部署，多个哨兵实例通过“少数服从多数”的原则，来判断主库是否客观下线。一般来说，我们可以部署三个哨兵，如果有两个哨兵认定主库“主观下线”，就可以开始切换过程。当然，如果你希望进一步提升判断准确率，也可以再适当增加哨兵个数，比如说使用五个哨兵。</p>
+<h5 id="哨兵在操作主从切换的过程中，客户端能否正常地进行请求操作？"><a href="#哨兵在操作主从切换的过程中，客户端能否正常地进行请求操作？" class="headerlink" title="哨兵在操作主从切换的过程中，客户端能否正常地进行请求操作？"></a>哨兵在操作主从切换的过程中，客户端能否正常地进行请求操作？</h5><blockquote>
+<p>主从集群一般是采用读写分离模式，当主库故障后，客户端仍然可以把读请求发送给从库，让从库服务。但是，对于写请求操作，客户端就无法执行了。</p>
+</blockquote>
+<hr>
+<h5 id="如果想要应用程序不感知服务的中断，还需要哨兵或客户端再做些什么吗？"><a href="#如果想要应用程序不感知服务的中断，还需要哨兵或客户端再做些什么吗？" class="headerlink" title="如果想要应用程序不感知服务的中断，还需要哨兵或客户端再做些什么吗？"></a>如果想要应用程序不感知服务的中断，还需要哨兵或客户端再做些什么吗？</h5><blockquote>
+<p>一方面，客户端需要能缓存应用发送的写请求。只要不是同步写操作（Redis 应用场景一般也没有同步写），写请求通常不会在应用程序的关键路径上，所以，客户端缓存写请求后，给应用程序返回一个确认就行。</p>
+</blockquote>
+<blockquote>
+<p>另一方面，主从切换完成后，客户端要能和新主库重新建立连接，哨兵需要提供订阅频道，让客户端能够订阅到新主库的信息。同时，客户端也需要能主动和哨兵通信，询问新主库的信息。</p>
+</blockquote>
+<blockquote>
+<p>客户端需要访问主从库时，不能直接写死主从库的地址了，而是需要从哨兵集群中获取最新的地址（sentinel get-master-addr-by-name命令），这样当实例异常时，哨兵切换后或者客户端断开重连，都可以从哨兵集群中拿到最新的实例地址。</p>
+</blockquote>
+<blockquote>
+<p>一般Redis的SDK都提供了通过哨兵拿到实例地址，再访问实例的方式，我们直接使用即可，不需要自己实现这些逻辑。当然，对于只有主从实例的情况，客户端需要和哨兵配合使用，而在分片集群模式下，这些逻辑都可以做在proxy层，这样客户端也不需要关心这些逻辑了，Codis就是这么做的。</p>
+</blockquote>
+<hr>
+<h5 id="Redis-的实例ID是根据什么进行生成的？"><a href="#Redis-的实例ID是根据什么进行生成的？" class="headerlink" title="Redis 的实例ID是根据什么进行生成的？"></a>Redis 的实例ID是根据什么进行生成的？</h5><blockquote>
+<p>Redis server启动时，会生成一个40字节长的随机字符串作为runID，具体算法用的是SHA-1算法。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/28/6%E3%80%816%E3%80%81Redis%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5%EF%BC%9A%E4%B8%BB%E4%BB%8E%E5%BA%93%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%EF%BC%9F/" rel="prev" title="6、Redis数据同步：主从库如何实现数据一致？">
+      <i class="fa fa-chevron-left"></i> 6、Redis数据同步：主从库如何实现数据一致？
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/07/05/8%E3%80%81%E5%93%A8%E5%85%B5%E9%9B%86%E7%BE%A4%EF%BC%9A%E5%93%A8%E5%85%B5%E6%8C%82%E4%BA%86%EF%BC%8C%E4%B8%BB%E4%BB%8E%E5%BA%93%E8%BF%98%E8%83%BD%E5%88%87%E6%8D%A2%E5%90%97%EF%BC%9F/" rel="next" title="8、哨兵集群：哨兵挂了，主从库还能切换吗？">
+      8、哨兵集群：哨兵挂了，主从库还能切换吗？ <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%EF%BC%9A%E4%B8%BB%E5%BA%93%E6%8C%82%E4%BA%86%EF%BC%8C%E5%A6%82%E4%BD%95%E4%B8%8D%E9%97%B4%E6%96%AD%E6%9C%8D%E5%8A%A1%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">哨兵机制：主库挂了，如何不间断服务？</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%E7%9A%84%E5%9F%BA%E6%9C%AC%E6%B5%81%E7%A8%8B"><span class="nav-number">1.1.</span> <span class="nav-text">哨兵机制的基本流程</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E7%9B%91%E6%8E%A7"><span class="nav-number">1.1.0.1.</span> <span class="nav-text">监控</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E9%80%89%E4%B8%BB"><span class="nav-number">1.1.0.2.</span> <span class="nav-text">选主</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E9%80%9A%E7%9F%A5"><span class="nav-number">1.1.0.3.</span> <span class="nav-text">通知</span></a></li></ol></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E4%B8%BB%E8%A7%82%E4%B8%8B%E7%BA%BF%E5%92%8C%E5%AE%A2%E8%A7%82%E4%B8%8B%E7%BA%BF"><span class="nav-number">1.2.</span> <span class="nav-text">主观下线和客观下线</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E9%80%89%E5%AE%9A%E6%96%B0%E4%B8%BB%E5%BA%93%EF%BC%9F"><span class="nav-number">1.3.</span> <span class="nav-text">如何选定新主库？</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E7%AD%9B%E9%80%89%E7%9A%84%E6%9D%A1%E4%BB%B6"><span class="nav-number">1.3.0.1.</span> <span class="nav-text">筛选的条件</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E4%B8%80%E5%AE%9A%E7%9A%84%E8%A7%84%E5%88%99"><span class="nav-number">1.3.0.2.</span> <span class="nav-text">一定的规则</span></a></li></ol></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E8%BD%AE%EF%BC%9A%E4%BC%98%E5%85%88%E7%BA%A7%E6%9C%80%E9%AB%98%E7%9A%84%E4%BB%8E%E5%BA%93%E5%BE%97%E5%88%86%E9%AB%98%E3%80%82"><span class="nav-number">1.3.1.</span> <span class="nav-text">第一轮：优先级最高的从库得分高。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E4%BA%8C%E8%BD%AE%EF%BC%9A%E5%92%8C%E6%97%A7%E4%B8%BB%E5%BA%93%E5%90%8C%E6%AD%A5%E7%A8%8B%E5%BA%A6%E6%9C%80%E6%8E%A5%E8%BF%91%E7%9A%84%E4%BB%8E%E5%BA%93%E5%BE%97%E5%88%86%E9%AB%98%E3%80%82"><span class="nav-number">1.3.2.</span> <span class="nav-text">第二轮：和旧主库同步程度最接近的从库得分高。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%AC%AC%E4%B8%89%E8%BD%AE%EF%BC%9AID-%E5%8F%B7%E5%B0%8F%E7%9A%84%E4%BB%8E%E5%BA%93%E5%BE%97%E5%88%86%E9%AB%98%E3%80%82"><span class="nav-number">1.3.3.</span> <span class="nav-text">第三轮：ID 号小的从库得分高。</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E6%80%BB%E7%BB%93"><span class="nav-number">1.3.4.</span> <span class="nav-text">总结</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%93%A8%E5%85%B5%E5%9C%A8%E6%93%8D%E4%BD%9C%E4%B8%BB%E4%BB%8E%E5%88%87%E6%8D%A2%E7%9A%84%E8%BF%87%E7%A8%8B%E4%B8%AD%EF%BC%8C%E5%AE%A2%E6%88%B7%E7%AB%AF%E8%83%BD%E5%90%A6%E6%AD%A3%E5%B8%B8%E5%9C%B0%E8%BF%9B%E8%A1%8C%E8%AF%B7%E6%B1%82%E6%93%8D%E4%BD%9C%EF%BC%9F"><span class="nav-number">1.3.4.1.</span> <span class="nav-text">哨兵在操作主从切换的过程中，客户端能否正常地进行请求操作？</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%A6%82%E6%9E%9C%E6%83%B3%E8%A6%81%E5%BA%94%E7%94%A8%E7%A8%8B%E5%BA%8F%E4%B8%8D%E6%84%9F%E7%9F%A5%E6%9C%8D%E5%8A%A1%E7%9A%84%E4%B8%AD%E6%96%AD%EF%BC%8C%E8%BF%98%E9%9C%80%E8%A6%81%E5%93%A8%E5%85%B5%E6%88%96%E5%AE%A2%E6%88%B7%E7%AB%AF%E5%86%8D%E5%81%9A%E4%BA%9B%E4%BB%80%E4%B9%88%E5%90%97%EF%BC%9F"><span class="nav-number">1.3.4.2.</span> <span class="nav-text">如果想要应用程序不感知服务的中断，还需要哨兵或客户端再做些什么吗？</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#Redis-%E7%9A%84%E5%AE%9E%E4%BE%8BID%E6%98%AF%E6%A0%B9%E6%8D%AE%E4%BB%80%E4%B9%88%E8%BF%9B%E8%A1%8C%E7%94%9F%E6%88%90%E7%9A%84%EF%BC%9F"><span class="nav-number">1.3.4.3.</span> <span class="nav-text">Redis 的实例ID是根据什么进行生成的？</span></a></li></ol></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Nolan Chic</p>
+  <div class="site-description" itemprop="description">Action speak louder than words.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Nolan Chic</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

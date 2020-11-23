@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="内存快照：宕机后，Redis如何实现快速恢复？和 AOF 相比，RDB 记录的是某一时刻的数据，并不是操作，所以，在做数据恢复时，我们可以直接把 RDB 文件读入内存，很快地完成恢复。 给哪些内存数据做快照？Redis 的数据都在内存中，为了提供所有数据的可靠性保证，它执行的是全量快照，也就是说，把内存中的所有数据都记录到磁盘中。 对于 Redis 而言，它的单线程模型就决定了，我们要尽量避免所有">
+<meta property="og:type" content="article">
+<meta property="og:title" content="5、内存快照：宕机后，Redis如何实现快速恢复？">
+<meta property="og:url" content="http://yoursite.com/2020/06/25/5%E3%80%81%E5%86%85%E5%AD%98%E5%BF%AB%E7%85%A7%EF%BC%9A%E5%AE%95%E6%9C%BA%E5%90%8E%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D%EF%BC%9F/index.html">
+<meta property="og:site_name" content="Nolan&#39;s Notes">
+<meta property="og:description" content="内存快照：宕机后，Redis如何实现快速恢复？和 AOF 相比，RDB 记录的是某一时刻的数据，并不是操作，所以，在做数据恢复时，我们可以直接把 RDB 文件读入内存，很快地完成恢复。 给哪些内存数据做快照？Redis 的数据都在内存中，为了提供所有数据的可靠性保证，它执行的是全量快照，也就是说，把内存中的所有数据都记录到磁盘中。 对于 Redis 而言，它的单线程模型就决定了，我们要尽量避免所有">
+<meta property="og:locale">
+<meta property="og:image" content="https://i.loli.net/2020/11/18/Pbo8yck42eT5Fpt.png">
+<meta property="og:image" content="https://i.loli.net/2020/11/18/hNWU3HEBj68qCfR.png">
+<meta property="og:image" content="https://i.loli.net/2020/11/18/hSn2JKtguwq1Lso.png">
+<meta property="article:published_time" content="2020-06-25T12:43:00.000Z">
+<meta property="article:modified_time" content="2020-11-23T15:28:14.851Z">
+<meta property="article:author" content="Nolan Chic">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://i.loli.net/2020/11/18/Pbo8yck42eT5Fpt.png">
+
+<link rel="canonical" href="http://yoursite.com/2020/06/25/5%E3%80%81%E5%86%85%E5%AD%98%E5%BF%AB%E7%85%A7%EF%BC%9A%E5%AE%95%E6%9C%BA%E5%90%8E%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D%EF%BC%9F/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>5、内存快照：宕机后，Redis如何实现快速恢复？ | Nolan's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Nolan's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/25/5%E3%80%81%E5%86%85%E5%AD%98%E5%BF%AB%E7%85%A7%EF%BC%9A%E5%AE%95%E6%9C%BA%E5%90%8E%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D%EF%BC%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          5、内存快照：宕机后，Redis如何实现快速恢复？
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-06-25 20:43:00" itemprop="dateCreated datePublished" datetime="2020-06-25T20:43:00+08:00">2020-06-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-23 23:28:14" itemprop="dateModified" datetime="2020-11-23T23:28:14+08:00">2020-11-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h3 id="内存快照：宕机后，Redis如何实现快速恢复？"><a href="#内存快照：宕机后，Redis如何实现快速恢复？" class="headerlink" title="内存快照：宕机后，Redis如何实现快速恢复？"></a>内存快照：宕机后，Redis如何实现快速恢复？</h3><p>和 AOF 相比，RDB 记录的是某一时刻的数据，并不是操作，所以，在做数据恢复时，我们可以直接把 RDB 文件读入内存，很快地完成恢复。</p>
+<h4 id="给哪些内存数据做快照？"><a href="#给哪些内存数据做快照？" class="headerlink" title="给哪些内存数据做快照？"></a>给哪些内存数据做快照？</h4><p>Redis 的数据都在内存中，为了提供所有数据的可靠性保证，它执行的是全量快照，也就是说，把内存中的所有数据都记录到磁盘中。</p>
+<p>对于 Redis 而言，它的单线程模型就决定了，我们要尽量避免所有会阻塞主线程的操作。</p>
+<p>Redis 提供了两个命令来生成 RDB 文件，分别是 save 和 bgsave。</p>
+<ul>
+<li><p>save：在主线程中执行，会导致阻塞；</p>
+</li>
+<li><p>bgsave：创建一个子进程，专门用于写入 RDB 文件，避免了主线程的阻塞，这也是 Redis RDB 文件生成的默认配置。</p>
+</li>
+</ul>
+<p>我们就可以通过 bgsave 命令来执行全量快照，这既提供了数据的可靠性保证，也避免了对 Redis 的性能影响。</p>
+<p>我们要关注的问题就是，在对内存数据做快照时，这些数据还能“动”吗? 也就是说，这些数据还能被修改吗？ 这个问题非常重要，这是因为，如果数据能被修改，那就意味着 Redis 还能正常处理写操作。否则，所有写操作都得等到快照完了才能执行，性能一下子就降低了。</p>
+<h4 id="快照时数据能修改吗"><a href="#快照时数据能修改吗" class="headerlink" title="快照时数据能修改吗?"></a>快照时数据能修改吗?</h4><p><strong>bgsave避免阻塞</strong>和正常处理写操作并不是一回事。此时，主线程的确没有阻塞，可以正常接收请求，但是，为了保证快照完整性，它只能处理读操作，因为不能修改正在执行快照的数据。</p>
+<p>为了快照而暂停写操作，肯定是不能接受的。所以这个时候，Redis 就会借助操作系统提供的写时复制技术（Copy-On-Write, COW），在执行快照的同时，正常处理写操作。</p>
+<p>简单来说，bgsave 子进程是由主线程 fork 生成的，可以共享主线程的所有内存数据。bgsave 子进程运行后，开始读取主线程的内存数据，并把它们写入 RDB 文件。</p>
+<p>此时，如果主线程对这些数据也都是读操作（例如图中的键值对 A），那么，主线程和 bgsave 子进程相互不影响。但是，如果主线程要修改一块数据（例如图中的键值对 C），那么，这块数据就会被复制一份，生成该数据的副本。然后，bgsave 子进程会把这个副本数据写入 RDB 文件，而在这个过程中，主线程仍然可以直接修改原来的数据。</p>
+<p><img src="https://i.loli.net/2020/11/18/Pbo8yck42eT5Fpt.png" alt="image.png"></p>
+<p>这既保证了快照的完整性，也允许主线程同时对数据进行修改，避免了对正常业务的影响。</p>
+<h4 id="多久做一次快照？可以每秒做一次快照吗？"><a href="#多久做一次快照？可以每秒做一次快照吗？" class="headerlink" title="多久做一次快照？可以每秒做一次快照吗？"></a>多久做一次快照？可以每秒做一次快照吗？</h4><p>虽然 bgsave 执行时不阻塞主线程，但是，如果<strong>频繁地执行全量快照，也会带来两方面的开销</strong>。</p>
+<p>一方面，频繁将全量数据写入磁盘，会给磁盘带来很大压力，多个快照竞争有限的磁盘带宽，前一个快照还没有做完，后一个又开始做了，容易造成恶性循环。</p>
+<p>另一方面，bgsave 子进程需要通过 fork 操作从主线程创建出来。虽然，子进程在创建后不会再阻塞主线程，但是，fork 这个创建过程本身会阻塞主线程，而且主线程的内存越大，阻塞时间越长。如果频繁 fork 出 bgsave 子进程，这就会频繁阻塞主线程了。</p>
+<h4 id="增量快照"><a href="#增量快照" class="headerlink" title="增量快照"></a>增量快照</h4><p>所谓增量快照，就是指，做了一次全量快照后，后续的快照只对修改的数据进行快照记录，这样可以避免每次全量快照的开销。</p>
+<p>在第一次做完全量快照后，T1 和 T2 时刻如果再做快照，我们只需要将被修改的数据写入快照文件就行。但是，这么做的前提是，我们需要记住哪些数据被修改了。你可不要小瞧这个“记住”功能，它需要我们使用额外的元数据信息去记录哪些数据被修改了，这会带来额外的空间开销问题</p>
+<p><img src="https://i.loli.net/2020/11/18/hNWU3HEBj68qCfR.png" alt="image.png"></p>
+<p>如果我们对每一个键值对的修改，都做个记录，那么，如果有 1 万个被修改的键值对，我们就需要有 1 万条额外的记录。而且，有的时候，键值对非常小，比如只有 32 字节，而记录它被修改的元数据信息，可能就需要 8 字节，这样的画，为了“记住”修改，引入的额外空间开销比较大。这对于内存资源宝贵的 Redis 来说，有些得不偿失</p>
+<h4 id="对比AOF"><a href="#对比AOF" class="headerlink" title="对比AOF"></a>对比AOF</h4><p>虽然跟 AOF 相比，快照的恢复速度快，但是，快照的频率不好把握，如果频率太低，两次快照间一旦宕机，就可能有比较多的数据丢失。如果频率太高，又会产生额外开销。</p>
+<h3 id="混合使用-AOF-日志和内存快照"><a href="#混合使用-AOF-日志和内存快照" class="headerlink" title="混合使用 AOF 日志和内存快照"></a>混合使用 AOF 日志和内存快照</h3><p>简单来说，内存快照以一定的频率执行，在两次快照之间，使用 AOF 日志记录这期间的所有命令操作。</p>
+<p>这样一来，快照不用很频繁地执行，这就避免了频繁 fork 对主线程的影响。而且，AOF 日志也只用记录两次快照间的操作，也就是说，不需要记录所有操作了，因此，就不会出现文件过大的情况了，也可以避免重写开销。</p>
+<p>如下图所示，T1 和 T2 时刻的修改，用 AOF 日志记录，等到第二次做全量快照时，就可以清空 AOF 日志，因为此时的修改都已经记录到快照中了，恢复时就不再用日志了。</p>
+<p><img src="https://i.loli.net/2020/11/18/hSn2JKtguwq1Lso.png" alt="image.png"></p>
+<p>这个方法既能享受到 RDB 文件快速恢复的好处，又能享受到 AOF 只记录操作命令的简单优势</p>
+<h5 id="持久化期间主进程的写操作，触发了写时复制，会不会阻塞主线程？"><a href="#持久化期间主进程的写操作，触发了写时复制，会不会阻塞主线程？" class="headerlink" title="持久化期间主进程的写操作，触发了写时复制，会不会阻塞主线程？"></a>持久化期间主进程的写操作，触发了写时复制，会不会阻塞主线程？</h5><blockquote>
+<p>写操作触发写时复制，如果都是小key，正常分配内存空间速度会很快，如果是bigkey或开启了内存大页机制，会有阻塞主线程的风险。</p>
+</blockquote>
+<h5 id="如何监控redis的读写比例呢？"><a href="#如何监控redis的读写比例呢？" class="headerlink" title="如何监控redis的读写比例呢？"></a>如何监控redis的读写比例呢？</h5><blockquote>
+<p>执行info all命令，可以看到每种命令的请求次数。</p>
+</blockquote>
+<h5 id="我们使用一个-2-核-CPU、4GB-内存、500GB-磁盘的云主机运行-Redis，Redis-数据库的数据量大小差不多是-2GB，我们使用了-RDB-做持久化保证。当时-Redis-的运行负载以修改操作为主，写读比例差不多在-8-2-左右，也就是说，如果有-100-个请求，80-个请求执行的是修改操作。你觉得，在这个场景下，用-RDB-做持久化有什么风险吗？你能帮着一起分析分析吗？"><a href="#我们使用一个-2-核-CPU、4GB-内存、500GB-磁盘的云主机运行-Redis，Redis-数据库的数据量大小差不多是-2GB，我们使用了-RDB-做持久化保证。当时-Redis-的运行负载以修改操作为主，写读比例差不多在-8-2-左右，也就是说，如果有-100-个请求，80-个请求执行的是修改操作。你觉得，在这个场景下，用-RDB-做持久化有什么风险吗？你能帮着一起分析分析吗？" class="headerlink" title="我们使用一个 2 核 CPU、4GB 内存、500GB 磁盘的云主机运行 Redis，Redis 数据库的数据量大小差不多是 2GB，我们使用了 RDB 做持久化保证。当时 Redis 的运行负载以修改操作为主，写读比例差不多在 8:2 左右，也就是说，如果有 100 个请求，80 个请求执行的是修改操作。你觉得，在这个场景下，用 RDB 做持久化有什么风险吗？你能帮着一起分析分析吗？"></a>我们使用一个 2 核 CPU、4GB 内存、500GB 磁盘的云主机运行 Redis，Redis 数据库的数据量大小差不多是 2GB，我们使用了 RDB 做持久化保证。当时 Redis 的运行负载以修改操作为主，写读比例差不多在 8:2 左右，也就是说，如果有 100 个请求，80 个请求执行的是修改操作。你觉得，在这个场景下，用 RDB 做持久化有什么风险吗？你能帮着一起分析分析吗？</h5><blockquote>
+<p>R:<strong>内存不足的风险</strong>：Redis fork 一个 bgsave 子进程进行 RDB 写入，如果主线程再接收到写操作，就会采用写时复制。写时复制需要给写操作的数据分配新的内存空间。本问题中写的比例为 80%，那么，在持久化过程中，为了保存 80% 写操作涉及的数据，写时复制机制会在实例内存中，为这些数据再分配新内存空间，分配的内存量相当于整个实例数据量的 80%，大约是 1.6GB，这样一来，整个系统内存的使用量就接近饱和了。此时，如果实例还有大量的新 key 写入或 key 修改，云主机内存很快就会被吃光。如果云主机开启了 Swap 机制，就会有一部分数据被换到磁盘上，当访问磁盘上的这部分数据时，性能会急剧下降。如果云主机没有开启 Swap，会直接触发 OOM，整个 Redis 实例会面临被系统 kill 掉的风险。</p>
+</blockquote>
+<blockquote>
+<p><strong>主线程和子进程竞争使用 CPU 的风险</strong>：生成 RDB 的子进程需要 CPU 核运行，主线程本身也需要 CPU 核运行，而且，如果 Redis 还启用了后台线程，此时，主线程、子进程和后台线程都会竞争 CPU 资源。由于云主机只有 2 核 CPU，这就会影响到主线程处理请求的速度。</p>
+</blockquote>
+<blockquote>
+<p>Kaito：a、内存资源风险：Redis fork子进程做RDB持久化，由于写的比例为80%，那么在持久化过程中，“写实复制”会重新分配整个实例80%的内存副本，大约需要重新分配1.6GB内存空间，这样整个系统的内存使用接近饱和，如果此时父进程又有大量新key写入，很快机器内存就会被吃光，如果机器开启了Swap机制，那么Redis会有一部分数据被换到磁盘上，当Redis访问这部分在磁盘上的数据时，性能会急剧下降，已经达不到高性能的标准（可以理解为武功被废）。如果机器没有开启Swap，会直接触发OOM，父子进程会面临被系统kill掉的风险。<br>b、CPU资源风险：虽然子进程在做RDB持久化，但生成RDB快照过程会消耗大量的CPU资源，虽然Redis处理处理请求是单线程的，但Redis Server还有其他线程在后台工作，例如AOF每秒刷盘、异步关闭文件描述符这些操作。由于机器只有2核CPU，这也就意味着父进程占用了超过一半的CPU资源，此时子进程做RDB持久化，可能会产生CPU竞争，导致的结果就是父进程处理请求延迟增大，子进程生成RDB快照的时间也会变长，整个Redis Server性能下降。<br>c、另外，可以再延伸一下，问题没有提到Redis进程是否绑定了CPU，如果绑定了CPU，那么子进程会继承父进程的CPU亲和性属性，子进程必然会与父进程争夺同一个CPU资源，整个Redis Server的性能必然会受到影响！所以如果Redis需要开启定时RDB和AOF重写，进程一定不要绑定CPU。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/06/23/4%E3%80%81-AOF%E6%97%A5%E5%BF%97%EF%BC%9A%E5%AE%95%E6%9C%BA%E4%BA%86%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1%EF%BC%9F/" rel="prev" title="4、 AOF日志：宕机了，Redis如何避免数据丢失？">
+      <i class="fa fa-chevron-left"></i> 4、 AOF日志：宕机了，Redis如何避免数据丢失？
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/06/28/6%E3%80%816%E3%80%81Redis%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5%EF%BC%9A%E4%B8%BB%E4%BB%8E%E5%BA%93%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%EF%BC%9F/" rel="next" title="6、Redis数据同步：主从库如何实现数据一致？">
+      6、Redis数据同步：主从库如何实现数据一致？ <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E5%86%85%E5%AD%98%E5%BF%AB%E7%85%A7%EF%BC%9A%E5%AE%95%E6%9C%BA%E5%90%8E%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D%EF%BC%9F"><span class="nav-number">1.</span> <span class="nav-text">内存快照：宕机后，Redis如何实现快速恢复？</span></a><ol class="nav-child"><li class="nav-item nav-level-4"><a class="nav-link" href="#%E7%BB%99%E5%93%AA%E4%BA%9B%E5%86%85%E5%AD%98%E6%95%B0%E6%8D%AE%E5%81%9A%E5%BF%AB%E7%85%A7%EF%BC%9F"><span class="nav-number">1.1.</span> <span class="nav-text">给哪些内存数据做快照？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%BF%AB%E7%85%A7%E6%97%B6%E6%95%B0%E6%8D%AE%E8%83%BD%E4%BF%AE%E6%94%B9%E5%90%97"><span class="nav-number">1.2.</span> <span class="nav-text">快照时数据能修改吗?</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A4%9A%E4%B9%85%E5%81%9A%E4%B8%80%E6%AC%A1%E5%BF%AB%E7%85%A7%EF%BC%9F%E5%8F%AF%E4%BB%A5%E6%AF%8F%E7%A7%92%E5%81%9A%E4%B8%80%E6%AC%A1%E5%BF%AB%E7%85%A7%E5%90%97%EF%BC%9F"><span class="nav-number">1.3.</span> <span class="nav-text">多久做一次快照？可以每秒做一次快照吗？</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%A2%9E%E9%87%8F%E5%BF%AB%E7%85%A7"><span class="nav-number">1.4.</span> <span class="nav-text">增量快照</span></a></li><li class="nav-item nav-level-4"><a class="nav-link" href="#%E5%AF%B9%E6%AF%94AOF"><span class="nav-number">1.5.</span> <span class="nav-text">对比AOF</span></a></li></ol></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E6%B7%B7%E5%90%88%E4%BD%BF%E7%94%A8-AOF-%E6%97%A5%E5%BF%97%E5%92%8C%E5%86%85%E5%AD%98%E5%BF%AB%E7%85%A7"><span class="nav-number">2.</span> <span class="nav-text">混合使用 AOF 日志和内存快照</span></a><ol class="nav-child"><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%9F%E9%97%B4%E4%B8%BB%E8%BF%9B%E7%A8%8B%E7%9A%84%E5%86%99%E6%93%8D%E4%BD%9C%EF%BC%8C%E8%A7%A6%E5%8F%91%E4%BA%86%E5%86%99%E6%97%B6%E5%A4%8D%E5%88%B6%EF%BC%8C%E4%BC%9A%E4%B8%8D%E4%BC%9A%E9%98%BB%E5%A1%9E%E4%B8%BB%E7%BA%BF%E7%A8%8B%EF%BC%9F"><span class="nav-number">2.0.1.</span> <span class="nav-text">持久化期间主进程的写操作，触发了写时复制，会不会阻塞主线程？</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E5%A6%82%E4%BD%95%E7%9B%91%E6%8E%A7redis%E7%9A%84%E8%AF%BB%E5%86%99%E6%AF%94%E4%BE%8B%E5%91%A2%EF%BC%9F"><span class="nav-number">2.0.2.</span> <span class="nav-text">如何监控redis的读写比例呢？</span></a></li><li class="nav-item nav-level-5"><a class="nav-link" href="#%E6%88%91%E4%BB%AC%E4%BD%BF%E7%94%A8%E4%B8%80%E4%B8%AA-2-%E6%A0%B8-CPU%E3%80%814GB-%E5%86%85%E5%AD%98%E3%80%81500GB-%E7%A3%81%E7%9B%98%E7%9A%84%E4%BA%91%E4%B8%BB%E6%9C%BA%E8%BF%90%E8%A1%8C-Redis%EF%BC%8CRedis-%E6%95%B0%E6%8D%AE%E5%BA%93%E7%9A%84%E6%95%B0%E6%8D%AE%E9%87%8F%E5%A4%A7%E5%B0%8F%E5%B7%AE%E4%B8%8D%E5%A4%9A%E6%98%AF-2GB%EF%BC%8C%E6%88%91%E4%BB%AC%E4%BD%BF%E7%94%A8%E4%BA%86-RDB-%E5%81%9A%E6%8C%81%E4%B9%85%E5%8C%96%E4%BF%9D%E8%AF%81%E3%80%82%E5%BD%93%E6%97%B6-Redis-%E7%9A%84%E8%BF%90%E8%A1%8C%E8%B4%9F%E8%BD%BD%E4%BB%A5%E4%BF%AE%E6%94%B9%E6%93%8D%E4%BD%9C%E4%B8%BA%E4%B8%BB%EF%BC%8C%E5%86%99%E8%AF%BB%E6%AF%94%E4%BE%8B%E5%B7%AE%E4%B8%8D%E5%A4%9A%E5%9C%A8-8-2-%E5%B7%A6%E5%8F%B3%EF%BC%8C%E4%B9%9F%E5%B0%B1%E6%98%AF%E8%AF%B4%EF%BC%8C%E5%A6%82%E6%9E%9C%E6%9C%89-100-%E4%B8%AA%E8%AF%B7%E6%B1%82%EF%BC%8C80-%E4%B8%AA%E8%AF%B7%E6%B1%82%E6%89%A7%E8%A1%8C%E7%9A%84%E6%98%AF%E4%BF%AE%E6%94%B9%E6%93%8D%E4%BD%9C%E3%80%82%E4%BD%A0%E8%A7%89%E5%BE%97%EF%BC%8C%E5%9C%A8%E8%BF%99%E4%B8%AA%E5%9C%BA%E6%99%AF%E4%B8%8B%EF%BC%8C%E7%94%A8-RDB-%E5%81%9A%E6%8C%81%E4%B9%85%E5%8C%96%E6%9C%89%E4%BB%80%E4%B9%88%E9%A3%8E%E9%99%A9%E5%90%97%EF%BC%9F%E4%BD%A0%E8%83%BD%E5%B8%AE%E7%9D%80%E4%B8%80%E8%B5%B7%E5%88%86%E6%9E%90%E5%88%86%E6%9E%90%E5%90%97%EF%BC%9F"><span class="nav-number">2.0.3.</span> <span class="nav-text">我们使用一个 2 核 CPU、4GB 内存、500GB 磁盘的云主机运行 Redis，Redis 数据库的数据量大小差不多是 2GB，我们使用了 RDB 做持久化保证。当时 Redis 的运行负载以修改操作为主，写读比例差不多在 8:2 左右，也就是说，如果有 100 个请求，80 个请求执行的是修改操作。你觉得，在这个场景下，用 RDB 做持久化有什么风险吗？你能帮着一起分析分析吗？</span></a></li></ol></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Nolan Chic</p>
+  <div class="site-description" itemprop="description">Action speak louder than words.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Nolan Chic</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

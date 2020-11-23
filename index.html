@@ -147,6 +147,1068 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/05/8%E3%80%81%E5%93%A8%E5%85%B5%E9%9B%86%E7%BE%A4%EF%BC%9A%E5%93%A8%E5%85%B5%E6%8C%82%E4%BA%86%EF%BC%8C%E4%B8%BB%E4%BB%8E%E5%BA%93%E8%BF%98%E8%83%BD%E5%88%87%E6%8D%A2%E5%90%97%EF%BC%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/07/05/8%E3%80%81%E5%93%A8%E5%85%B5%E9%9B%86%E7%BE%A4%EF%BC%9A%E5%93%A8%E5%85%B5%E6%8C%82%E4%BA%86%EF%BC%8C%E4%B8%BB%E4%BB%8E%E5%BA%93%E8%BF%98%E8%83%BD%E5%88%87%E6%8D%A2%E5%90%97%EF%BC%9F/" class="post-title-link" itemprop="url">8、哨兵集群：哨兵挂了，主从库还能切换吗？</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-07-05 15:31:00" itemprop="dateCreated datePublished" datetime="2020-07-05T15:31:00+08:00">2020-07-05</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-23 23:31:43" itemprop="dateModified" datetime="2020-11-23T23:31:43+08:00">2020-11-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="哨兵集群：哨兵挂了，主从库还能切换吗？"><a href="#哨兵集群：哨兵挂了，主从库还能切换吗？" class="headerlink" title="哨兵集群：哨兵挂了，主从库还能切换吗？"></a>哨兵集群：哨兵挂了，主从库还能切换吗？</h2><p>哨兵机制，它可以实现主从库的自动切换。通过部署多个实例，就形成了一个哨兵集群。哨兵集群中的多个实例共同判断，可以降低对主库下线的误判率。</p>
+<p>一旦多个实例组成了<strong>哨兵集群</strong>，即使有哨兵实例出现故障挂掉了，其他哨兵还能继续协作完成主从库切换的工作，包括判定主库是不是处于下线状态，选择新主库，以及通知从库和客户端。</p>
+<p>在配置哨兵的信息时，我们只需要用到下面的这个配置项，设置<strong>主库的 IP</strong> 和 <strong>端口</strong>，并没有配置其他哨兵的连接信息.</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sentinel monitor &lt;master-name&gt; &lt;ip&gt; &lt;redis-port&gt; &lt;quorum&gt; </span><br></pre></td></tr></table></figure>
+
+<h4 id="基于-pub-sub-机制的哨兵集群组成"><a href="#基于-pub-sub-机制的哨兵集群组成" class="headerlink" title="基于 pub/sub 机制的哨兵集群组成"></a>基于 pub/sub 机制的哨兵集群组成</h4><p>哨兵实例之间可以相互发现，要归功于 Redis 提供的 pub/sub 机制，也就是发布 / 订阅机制。</p>
+<p>哨兵只要和主库建立起了连接，就可以在主库上发布消息了，比如说发布它自己的连接信息（IP 和端口）。同时，它也可以从主库上订阅消息，获得其他哨兵发布的连接信息。当多个哨兵实例都在主库上做了发布和订阅操作后，它们之间就能知道彼此的 IP 地址和端口。</p>
+<p>为了区分不同应用的消息，Redis 会以频道的形式，对这些消息进行分门别类的管理，<strong>只有订阅了同一个频道的应用，才能通过发布的消息进行信息交换</strong>。</p>
+<p>在主从集群中，主库上有一个名为“<strong>__sentinel__:hello</strong>”的频道，不同哨兵就是通过它来相互发现，实现互相通信的。</p>
+<p><img src="https://i.loli.net/2020/11/19/MLd56HPAsXuBjI4.png" alt="image.png"></p>
+<p>在图中，哨兵 1 把自己的 IP（172.16.19.3）和端口（26579）发布到“__sentinel__:hello”频道上，哨兵 2 和 3 订阅了该频道。那么此时，哨兵 2 和 3 就可以从这个频道直接获取哨兵 1 的 IP 地址和端口号。</p>
+<p>哨兵除了彼此之间建立起连接形成集群外，还需要和从库建立连接。这是因为，在哨兵的监控任务中，它需要对主从库都进行心跳判断，而且在主从库切换完成后，它还需要通知从库，让它们和新主库进行同步。</p>
+<h5 id="哨兵是如何知道从库的-IP-地址和端口的呢？"><a href="#哨兵是如何知道从库的-IP-地址和端口的呢？" class="headerlink" title="哨兵是如何知道从库的 IP 地址和端口的呢？"></a>哨兵是如何知道从库的 IP 地址和端口的呢？</h5><p>这是由哨兵向主库发送 INFO 命令来完成的。就像下图所示，哨兵 2 给主库发送 INFO 命令，主库接受到这个命令后，就会把从库列表返回给哨兵。接着，哨兵就可以根据从库列表中的连接信息，和每个从库建立连接，并在这个连接上持续地对从库进行监控。哨兵 1 和 3 可以通过相同的方法和从库建立连接。</p>
+<p><img src="https://i.loli.net/2020/11/19/xptesHJNGO5oRg8.png" alt="image.png"></p>
+<p>通过 pub/sub 机制，哨兵之间可以组成集群，同时，哨兵又通过 INFO 命令，获得了从库连接信息，也能和从库建立连接，并进行监控了。</p>
+<p>但是，哨兵不能只和主、从库连接。因为，主从库切换后，客户端也需要知道新主库的连接信息，才能向新主库发送请求操作。所以，哨兵还需要完成把新主库的信息告诉客户端这个任务。</p>
+<h5 id="如何在客户端通过监控了解哨兵进行主从切换的过程呢？比如说，主从切换进行到哪一步了？"><a href="#如何在客户端通过监控了解哨兵进行主从切换的过程呢？比如说，主从切换进行到哪一步了？" class="headerlink" title="如何在客户端通过监控了解哨兵进行主从切换的过程呢？比如说，主从切换进行到哪一步了？"></a>如何在客户端通过监控了解哨兵进行主从切换的过程呢？比如说，主从切换进行到哪一步了？</h5><p>我们仍然可以依赖 pub/sub 机制，来帮助我们完成哨兵和客户端间的信息同步</p>
+<h3 id="基于-pub-sub-机制的客户端事件通知"><a href="#基于-pub-sub-机制的客户端事件通知" class="headerlink" title="基于 pub/sub 机制的客户端事件通知"></a>基于 pub/sub 机制的客户端事件通知</h3><p>哨兵就是一个运行在特定模式下的 Redis 实例，只不过它并不服务请求操作，只是完成监控、选主和通知的任务。所以，每个哨兵实例也提供 pub/sub 机制，客户端可以从哨兵订阅消息。哨兵提供的消息订阅频道有很多，不同频道包含了主从库切换过程中的不同关键事件。</p>
+<p><img src="https://i.loli.net/2020/11/19/Egx5IjiLTNRFDz7.png" alt="image.png"></p>
+<p>有了 pub/sub 机制，哨兵和哨兵之间、哨兵和从库之间、哨兵和客户端之间就都能建立起连接了，再加上主库下线判断和选主依据，哨兵集群的监控、选主和通知三个任务就基本可以正常工作了。不过，我们还需要考虑一个问题：主库故障以后，哨兵集群有多个实例，那怎么确定由哪个哨兵来进行实际的主从切换呢？</p>
+<h3 id="由哪个哨兵执行主从切换？"><a href="#由哪个哨兵执行主从切换？" class="headerlink" title="由哪个哨兵执行主从切换？"></a>由哪个哨兵执行主从切换？</h3><p>确定由哪个哨兵执行主从切换的过程，和主库“客观下线”的判断过程类似，也是一个“投票仲裁”的过程。在具体了解这个过程前，我们再来看下，判断“客观下线”的仲裁过程。</p>
+<p>哨兵集群要判定主库“客观下线”，需要有一定数量的实例都认为该主库已经“主观下线”了。</p>
+<p><u>任何一个实例只要自身判断主库“主观下线”后，就会给其他实例发送 is-master-down-by-addr 命令。接着，其他实例会根据自己和主库的连接情况，做出 Y 或 N 的响应，Y 相当于赞成票，N 相当于反对票。</u></p>
+<p><img src="https://i.loli.net/2020/11/19/yfz8alIWeuZBg5O.png" alt="image.png"></p>
+<p>一个哨兵获得了仲裁所需的赞成票数后，就可以标记主库为“客观下线”。这个所需的赞成票数是通过哨兵配置文件中的 quorum 配置项设定的。例如，现在有 5 个哨兵，quorum 配置的是 3，那么，一个哨兵需要 3 张赞成票，就可以标记主库为“客观下线”了。这 3 张赞成票包括哨兵自己的一张赞成票和另外两个哨兵的赞成票。</p>
+<p>此时，这个哨兵就可以再给其他哨兵发送命令，表明希望由自己来执行主从切换，并让所有其他哨兵进行投票。这个投票过程称为“Leader 选举”。因为最终执行主从切换的哨兵称为 Leader，投票过程就是确定 Leader。</p>
+<p>在投票过程中，任何一个想成为 Leader 的哨兵，要满足两个条件：第一，拿到半数以上的赞成票；第二，拿到的票数同时还需要大于等于哨兵配置文件中的 quorum 值。以 3 个哨兵为例，假设此时的 quorum 设置为 2，那么，任何一个想成为 Leader 的哨兵只要拿到 2 张赞成票，就可以了。</p>
+<p>一张图片，展示一下 3 个哨兵、quorum 为 2 的选举过程。</p>
+<p><img src="https://i.loli.net/2020/11/19/zNIWgq5Dhc1OVyA.png" alt="image.png"></p>
+<p>在 T1 时刻，S1 判断主库为“客观下线”，它想成为 Leader，就先给自己投一张赞成票，然后分别向 S2 和 S3 发送命令，表示要成为 Leader。</p>
+<p>在 T2 时刻，S3 判断主库为“客观下线”，它也想成为 Leader，所以也先给自己投一张赞成票，再分别向 S1 和 S2 发送命令，表示要成为 Leader。</p>
+<p>在 T3 时刻，S1 收到了 S3 的 Leader 投票请求。因为 S1 已经给自己投了一票 Y，所以它不能再给其他哨兵投赞成票了，所以 S1 回复 N 表示不同意。同时，S2 收到了 T2 时 S3 发送的 Leader 投票请求。因为 S2 之前没有投过票，它会给第一个向它发送投票请求的哨兵回复 Y，给后续再发送投票请求的哨兵回复 N，所以，在 T3 时，S2 回复 S3，同意 S3 成为 Leader。</p>
+<p>在 T4 时刻，S2 才收到 T1 时 S1 发送的投票命令。因为 S2 已经在 T3 时同意了 S3 的投票请求，此时，S2 给 S1 回复 N，表示不同意 S1 成为 Leader。发生这种情况，是因为 S3 和 S2 之间的网络传输正常，而 S1 和 S2 之间的网络传输可能正好拥塞了，导致投票请求传输慢了。</p>
+<p>最后，在 T5 时刻，S1 得到的票数是来自它自己的一票 Y 和来自 S2 的一票 N。而 S3 除了自己的赞成票 Y 以外，还收到了来自 S2 的一票 Y。此时，S3 不仅获得了半数以上的 Leader 赞成票，也达到预设的 quorum 值（quorum 为 2），所以它最终成为了 Leader。接着，S3 会开始执行选主操作，而且在选定新主库后，会给其他从库和客户端通知新主库的信息。</p>
+<p>如果 S3 没有拿到 2 票 Y，那么这轮投票就不会产生 Leader。哨兵集群会等待一段时间（也就是<strong>哨兵故障转移超时时间的 2 倍</strong>），再重新选举。这是因为，哨兵集群能够进行成功投票，很大程度上依赖于选举命令的正常网络传播。如果网络压力较大或有短时堵塞，就可能导致没有一个哨兵能拿到半数以上的赞成票。所以，等到网络拥塞好转之后，再进行投票选举，成功的概率就会增加。</p>
+<p>需要注意的是，如果哨兵集群只有 2 个实例，此时，一个哨兵要想成为 Leader，必须获得 2 票，而不是 1 票。所以，如果有个哨兵挂掉了，那么，此时的集群是无法进行主从库切换的。因此，通常我们至少会配置 3 个哨兵实例。这一点很重要，你在实际应用时可不能忽略了。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>我们在解决一个系统问题的时候，会引入一个新机制，或者设计一层新功能，比如：为了实现主从切换，我们引入了哨兵；为了避免单个哨兵故障后无法进行主从切换，以及为了减少误判率，又引入了哨兵集群；哨兵集群又需要有一些机制来支撑它的正常运行。</p>
+<p><strong>支持哨兵集群的这些关键机制</strong></p>
+<ul>
+<li>基于 pub/sub 机制的哨兵集群组成过程；</li>
+<li>基于 INFO 命令的从库列表，这可以帮助哨兵和从库建立连接；</li>
+<li>基于哨兵自身的 pub/sub 功能，这实现了客户端和哨兵之间的事件通知。</li>
+</ul>
+<p>对于主从切换，当然不是哪个哨兵想执行就可以执行的，否则就乱套了。所以，这就需要哨兵集群在判断了主库“客观下线”后，经过投票仲裁，选举一个 Leader 出来，由它负责实际的主从切换，即由它来完成新主库的选择以及通知从库与客户端。</p>
+<p><strong>要保证所有哨兵实例的配置是一致的，尤其是主观下线的判断值 down-after-milliseconds</strong>, 我们曾经就踩过一个“坑”。当时，在我们的项目中，因为这个值在不同的哨兵实例上配置不一致，导致哨兵集群一直没有对有故障的主库形成共识，也就没有及时切换主库，最终的结果就是集群服务不稳定。所以，你一定不要忽略这条看似简单的经验。</p>
+<h3 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h3><h5 id="假设有一个-Redis-集群，是“一主四从”，同时配置了包含-5-个哨兵实例的集群，quorum-值设为-2。在运行过程中，如果有-3-个哨兵实例都发生故障了，此时，Redis-主库如果有故障，还能正确地判断主库“客观下线”吗？如果可以的话，还能进行主从库自动切换吗？"><a href="#假设有一个-Redis-集群，是“一主四从”，同时配置了包含-5-个哨兵实例的集群，quorum-值设为-2。在运行过程中，如果有-3-个哨兵实例都发生故障了，此时，Redis-主库如果有故障，还能正确地判断主库“客观下线”吗？如果可以的话，还能进行主从库自动切换吗？" class="headerlink" title="假设有一个 Redis 集群，是“一主四从”，同时配置了包含 5 个哨兵实例的集群，quorum 值设为 2。在运行过程中，如果有 3 个哨兵实例都发生故障了，此时，Redis 主库如果有故障，还能正确地判断主库“客观下线”吗？如果可以的话，还能进行主从库自动切换吗？"></a>假设有一个 Redis 集群，是“一主四从”，同时配置了包含 5 个哨兵实例的集群，quorum 值设为 2。在运行过程中，如果有 3 个哨兵实例都发生故障了，此时，Redis 主库如果有故障，还能正确地判断主库“客观下线”吗？如果可以的话，还能进行主从库自动切换吗？</h5><blockquote>
+<p>因为判定主库“客观下线”的依据是，认为主库“主观下线”的哨兵个数要大于等于 quorum 值，现在还剩 2 个哨兵实例，个数正好等于 quorum 值，所以还能正常判断主库是否处于“客观下线”状态。如果一个哨兵想要执行主从切换，就要获到半数以上的哨兵投票赞成，也就是至少需要 3 个哨兵投票赞成。</p>
+</blockquote>
+<blockquote>
+<p>但是，现在只有 2 个哨兵了，所以就无法进行主从切换了。</p>
+</blockquote>
+<hr>
+<h5 id="哨兵实例是不是越多越好呢？"><a href="#哨兵实例是不是越多越好呢？" class="headerlink" title="哨兵实例是不是越多越好呢？"></a>哨兵实例是不是越多越好呢？</h5><blockquote>
+<p>哨兵实例越多，误判率会越低，但是在判定主库下线和选举 Leader 时，实例需要拿到的赞成票数也越多，等待所有哨兵投完票的时间可能也会相应增加，主从库切换的时间也会变长，客户端容易堆积较多的请求操作，可能会导致客户端请求溢出，从而造成请求丢失。如果业务层对 Redis 的操作有响应时间要求，就可能会因为新主库一直没有选定，新操作无法执行而发生超时报警。</p>
+</blockquote>
+<hr>
+<h5 id="如果同时调大-down-after-milliseconds-值，对减少误判是不是也有好处？"><a href="#如果同时调大-down-after-milliseconds-值，对减少误判是不是也有好处？" class="headerlink" title="如果同时调大 down-after-milliseconds 值，对减少误判是不是也有好处？"></a>如果同时调大 down-after-milliseconds 值，对减少误判是不是也有好处？</h5><blockquote>
+<p>调大 down-after-milliseconds 后，可能会导致这样的情况：主库实际已经发生故障了，但是哨兵过了很长时间才判断出来，这就会影响到 Redis 对业务的可用性。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/01/7%E3%80%81%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%EF%BC%9A%E4%B8%BB%E5%BA%93%E6%8C%82%E4%BA%86%EF%BC%8C%E5%A6%82%E4%BD%95%E4%B8%8D%E9%97%B4%E6%96%AD%E6%9C%8D%E5%8A%A1%EF%BC%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/07/01/7%E3%80%81%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%EF%BC%9A%E4%B8%BB%E5%BA%93%E6%8C%82%E4%BA%86%EF%BC%8C%E5%A6%82%E4%BD%95%E4%B8%8D%E9%97%B4%E6%96%AD%E6%9C%8D%E5%8A%A1%EF%BC%9F/" class="post-title-link" itemprop="url">7、哨兵机制：主库挂了，如何不间断服务？</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-07-01 23:29:00" itemprop="dateCreated datePublished" datetime="2020-07-01T23:29:00+08:00">2020-07-01</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-23 23:30:15" itemprop="dateModified" datetime="2020-11-23T23:30:15+08:00">2020-11-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="哨兵机制：主库挂了，如何不间断服务？"><a href="#哨兵机制：主库挂了，如何不间断服务？" class="headerlink" title="哨兵机制：主库挂了，如何不间断服务？"></a>哨兵机制：主库挂了，如何不间断服务？</h2><p>主从库集群模式。在这个模式下，如果从库发生故障了，客户端可以继续向主库或其他从库发送请求，进行相关的操作。<br>但是如果主库发生故障了，那就直接会影响到从库的同步，因为从库没有相应的主库可以进行数据复制操作了。</p>
+<p><img src="https://i.loli.net/2020/11/19/GE6cCb9iQzU7PBm.png" alt="image.png"></p>
+<p>无论是写服务中断，还是从库无法进行数据同步，都是不能接受的。</p>
+<p>所以，如果主库挂了，我们就需要运行一个新主库，比如说把一个从库切换为主库，把它当成主库。</p>
+<p>这就涉及到三个问题：</p>
+<ul>
+<li><p>1、主库真的挂了吗？</p>
+</li>
+<li><p>2、该选择哪个从库作为主库？</p>
+</li>
+<li><p>3、怎么把新主库的相关信息通知给从库和客户端呢？</p>
+</li>
+</ul>
+<h3 id="哨兵机制的基本流程"><a href="#哨兵机制的基本流程" class="headerlink" title="哨兵机制的基本流程"></a>哨兵机制的基本流程</h3><p>哨兵主要负责的就是三个任务：</p>
+<ul>
+<li>监控</li>
+<li>选主（选择主库）</li>
+<li>通知</li>
+</ul>
+<h5 id="监控"><a href="#监控" class="headerlink" title="监控"></a>监控</h5><p>监控是指哨兵进程在运行时，周期性地给所有的主从库发送 <code>PING</code> 命令，检测它们是否仍然在线运行。</p>
+<p>如果从库没有在规定时间内响应哨兵的 <code>PING</code> 命令，哨兵就会把它标记为“下线状态”；</p>
+<p>同样，如果主库也没有在规定时间内响应哨兵的 <code>PING</code> 命令，哨兵就会判定主库下线，然后开始<strong>自动切换主库</strong>的流程。</p>
+<h5 id="选主"><a href="#选主" class="headerlink" title="选主"></a>选主</h5><p>主库挂了以后，哨兵就需要从很多个从库里，按照一定的规则选择一个从库实例，把它作为新的主库。这一步完成后，现在的集群里就有了新主库。</p>
+<h5 id="通知"><a href="#通知" class="headerlink" title="通知"></a>通知</h5><p>在执行通知任务时，哨兵会把新主库的连接信息发给其他从库，让它们执行 replicaof 命令，和新主库建立连接，并进行数据复制。</p>
+<p>同时，哨兵会把新主库的连接信息通知给客户端，让它们把请求操作发到新主库上。</p>
+<p><img src="https://i.loli.net/2020/11/19/pZgD4e8fmblo7G2.png" alt="image.png"></p>
+<p>在这三个任务中，通知任务相对来说比较简单，哨兵只需要把新主库信息发给从库和客户端，让它们和新主库建立连接就行，并不涉及决策的逻辑。</p>
+<p>但是，在监控和选主这两个任务中，哨兵需要做出两个决策：</p>
+<ul>
+<li><p>在监控任务中，哨兵需要判断主库是否处于下线状态；</p>
+</li>
+<li><p>在选主任务中，哨兵也要决定选择哪个从库实例作为主库。</p>
+</li>
+</ul>
+<h3 id="主观下线和客观下线"><a href="#主观下线和客观下线" class="headerlink" title="主观下线和客观下线"></a>主观下线和客观下线</h3><p><strong>哨兵进程会使用 PING 命令检测它自己和主、从库的网络连接情况，用来判断实例的状态</strong>。如果哨兵发现主库或从库对 PING 命令的响应超时了，那么，哨兵就会先把它标记为“主观下线”。</p>
+<p>在判断主库是否下线时，不能由一个哨兵说了算，只有大多数的哨兵实例，都判断主库已经“主观下线”了，主库才会被标记为“客观下线”，这个叫法也是表明主库下线成为一个客观事实了。这个判断原则就是：少数服从多数。同时，这会进一步触发哨兵开始主从切换流程。</p>
+<p><img src="https://i.loli.net/2020/11/19/PbyCS9HfQvWNJhK.png" alt="image.png"></p>
+<h3 id="如何选定新主库？"><a href="#如何选定新主库？" class="headerlink" title="如何选定新主库？"></a>如何选定新主库？</h3><p>一般来说，我把哨兵选择新主库的过程称为“筛选 + 打分”。简单来说，我们在多个从库中，先按照<strong>一定的筛选条件</strong>，把不符合条件的从库去掉。</p>
+<p>然后，我们再按照<strong>一定的规则</strong>，给剩下的从库逐个打分，将得分最高的从库选为新主库，如下图所示：</p>
+<p><img src="https://i.loli.net/2020/11/19/iVegnLK2dtyqUAQ.png" alt="image.png"></p>
+<h5 id="筛选的条件"><a href="#筛选的条件" class="headerlink" title="筛选的条件"></a>筛选的条件</h5><ul>
+<li>除了要检查从库的当前在线状态，还要判断它之前的网络连接状态</li>
+<li>从库总是和主库断连，而且断连次数超出了一定的阈值，我们就有理由相信，这个从库的网络状况并不是太好，就可以把这个从库筛掉了</li>
+</ul>
+<blockquote>
+<p>down-after-milliseconds * 10。其中，down-after-milliseconds 是我们认定主从库断连的最大连接超时时间。如果在 down-after-milliseconds 毫秒内，主从节点都没有通过网络联系上，我们就可以认为主从节点断连了。如果发生断连的次数超过了 10 次，就说明这个从库的网络状况不好，不适合作为新主库。</p>
+</blockquote>
+<h5 id="一定的规则"><a href="#一定的规则" class="headerlink" title="一定的规则"></a>一定的规则</h5><p>可以分别按照三个规则依次进行三轮打分，这三个规则分别是</p>
+<ul>
+<li>从库优先级</li>
+<li>从库复制进度</li>
+<li>从库 ID 号</li>
+</ul>
+<p>只要在某一轮中，有从库得分最高，那么它就是主库了，选主过程到此结束。如果没有出现得分最高的从库，那么就继续进行下一轮。</p>
+<h4 id="第一轮：优先级最高的从库得分高。"><a href="#第一轮：优先级最高的从库得分高。" class="headerlink" title="第一轮：优先级最高的从库得分高。"></a>第一轮：优先级最高的从库得分高。</h4><p>用户可以通过 slave-priority 配置项，给不同的从库设置不同优先级。<br>比如，你有两个从库，它们的内存大小不一样，你可以手动给内存大的实例设置一个高优先级。<br>在选主时，哨兵会给优先级高的从库打高分，如果有一个从库优先级最高，那么它就是新主库了。如果从库的优先级都一样，那么哨兵开始第二轮打分。</p>
+<h4 id="第二轮：和旧主库同步程度最接近的从库得分高。"><a href="#第二轮：和旧主库同步程度最接近的从库得分高。" class="headerlink" title="第二轮：和旧主库同步程度最接近的从库得分高。"></a>第二轮：和旧主库同步程度最接近的从库得分高。</h4><p>这个规则的依据是，如果选择和旧主库同步最接近的那个从库作为主库，那么，这个新主库上就有最新的数据。</p>
+<p>在这个过程中，主库会用 master_repl_offset 记录当前的最新写操作在 repl_backlog_buffer 中的位置，而从库会用 slave_repl_offset 这个值记录当前的复制进度。</p>
+<p>此时，我们想要找的从库，它的 slave_repl_offset 需要最接近 master_repl_offset。如果在所有从库中，有从库的 slave_repl_offset 最接近 master_repl_offset，那么它的得分就最高，可以作为新主库。</p>
+<p>旧主库的 master_repl_offset 是 1000，从库 1、2 和 3 的 slave_repl_offset 分别是 950、990 和 900，那么，从库 2 就应该被选为新主库。</p>
+<p><img src="https://i.loli.net/2020/11/19/X1hZig32aLfwPBS.png" alt="image.png"></p>
+<p>如果有两个从库的 slave_repl_offset 值大小是一样的, 我们就需要给它们进行第三轮打分了</p>
+<h4 id="第三轮：ID-号小的从库得分高。"><a href="#第三轮：ID-号小的从库得分高。" class="headerlink" title="第三轮：ID 号小的从库得分高。"></a>第三轮：ID 号小的从库得分高。</h4><p>每个实例都会有一个 ID，这个 ID 就类似于这里的从库的编号。目前，Redis 在选主库时，有一个默认的规定：<strong>在优先级和复制进度都相同的情况下，ID 号最小的从库得分最高，会被选为新主库</strong>。</p>
+<p>哨兵会按照在线状态、网络状态，筛选过滤掉一部分不符合要求的从库，然后，依次按照优先级、复制进度、ID 号大小再对剩余的从库进行打分，只要有得分最高的从库出现，就把它选为新主库。</p>
+<h4 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h4><p>主从集群的数据同步，是数据可靠的基础保证；而在主库发生故障时，自动的主从切换是服务不间断的关键支撑。</p>
+<p>Redis 的哨兵机制自动完成了以下三大功能，从而实现了主从库的自动切换，可以降低 Redis 集群的运维开销：</p>
+<ul>
+<li>监控：监控主库运行状态，并判断主库是否客观下线；</li>
+<li>选主：在主库客观下线后，选取新主库；</li>
+<li>通知：选出新主库后，通知从库和客户端。</li>
+</ul>
+<p>为了降低误判率，在实际应用时，哨兵机制通常采用多实例的方式进行部署，多个哨兵实例通过“少数服从多数”的原则，来判断主库是否客观下线。一般来说，我们可以部署三个哨兵，如果有两个哨兵认定主库“主观下线”，就可以开始切换过程。当然，如果你希望进一步提升判断准确率，也可以再适当增加哨兵个数，比如说使用五个哨兵。</p>
+<h5 id="哨兵在操作主从切换的过程中，客户端能否正常地进行请求操作？"><a href="#哨兵在操作主从切换的过程中，客户端能否正常地进行请求操作？" class="headerlink" title="哨兵在操作主从切换的过程中，客户端能否正常地进行请求操作？"></a>哨兵在操作主从切换的过程中，客户端能否正常地进行请求操作？</h5><blockquote>
+<p>主从集群一般是采用读写分离模式，当主库故障后，客户端仍然可以把读请求发送给从库，让从库服务。但是，对于写请求操作，客户端就无法执行了。</p>
+</blockquote>
+<hr>
+<h5 id="如果想要应用程序不感知服务的中断，还需要哨兵或客户端再做些什么吗？"><a href="#如果想要应用程序不感知服务的中断，还需要哨兵或客户端再做些什么吗？" class="headerlink" title="如果想要应用程序不感知服务的中断，还需要哨兵或客户端再做些什么吗？"></a>如果想要应用程序不感知服务的中断，还需要哨兵或客户端再做些什么吗？</h5><blockquote>
+<p>一方面，客户端需要能缓存应用发送的写请求。只要不是同步写操作（Redis 应用场景一般也没有同步写），写请求通常不会在应用程序的关键路径上，所以，客户端缓存写请求后，给应用程序返回一个确认就行。</p>
+</blockquote>
+<blockquote>
+<p>另一方面，主从切换完成后，客户端要能和新主库重新建立连接，哨兵需要提供订阅频道，让客户端能够订阅到新主库的信息。同时，客户端也需要能主动和哨兵通信，询问新主库的信息。</p>
+</blockquote>
+<blockquote>
+<p>客户端需要访问主从库时，不能直接写死主从库的地址了，而是需要从哨兵集群中获取最新的地址（sentinel get-master-addr-by-name命令），这样当实例异常时，哨兵切换后或者客户端断开重连，都可以从哨兵集群中拿到最新的实例地址。</p>
+</blockquote>
+<blockquote>
+<p>一般Redis的SDK都提供了通过哨兵拿到实例地址，再访问实例的方式，我们直接使用即可，不需要自己实现这些逻辑。当然，对于只有主从实例的情况，客户端需要和哨兵配合使用，而在分片集群模式下，这些逻辑都可以做在proxy层，这样客户端也不需要关心这些逻辑了，Codis就是这么做的。</p>
+</blockquote>
+<hr>
+<h5 id="Redis-的实例ID是根据什么进行生成的？"><a href="#Redis-的实例ID是根据什么进行生成的？" class="headerlink" title="Redis 的实例ID是根据什么进行生成的？"></a>Redis 的实例ID是根据什么进行生成的？</h5><blockquote>
+<p>Redis server启动时，会生成一个40字节长的随机字符串作为runID，具体算法用的是SHA-1算法。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/28/6%E3%80%816%E3%80%81Redis%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5%EF%BC%9A%E4%B8%BB%E4%BB%8E%E5%BA%93%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%EF%BC%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/06/28/6%E3%80%816%E3%80%81Redis%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5%EF%BC%9A%E4%B8%BB%E4%BB%8E%E5%BA%93%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%EF%BC%9F/" class="post-title-link" itemprop="url">6、Redis数据同步：主从库如何实现数据一致？</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-06-28 12:18:00" itemprop="dateCreated datePublished" datetime="2020-06-28T12:18:00+08:00">2020-06-28</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-23 23:32:13" itemprop="dateModified" datetime="2020-11-23T23:32:13+08:00">2020-11-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Redis数据同步：主从库如何实现数据一致？"><a href="#Redis数据同步：主从库如何实现数据一致？" class="headerlink" title="Redis数据同步：主从库如何实现数据一致？"></a>Redis数据同步：主从库如何实现数据一致？</h2><p>Redis 提供了主从库模式，以保证数据副本的一致，主从库之间采用的是读写分离的方式。</p>
+<ul>
+<li><p><strong>读操作</strong>：主库、从库都可以接收；</p>
+</li>
+<li><p><strong>写操作</strong>：首先到主库执行，然后，主库将写操作同步给从库。</p>
+</li>
+</ul>
+<p><img src="https://i.loli.net/2020/11/18/LP9wvaBs6ohidfR.png" alt="image.png"></p>
+<h3 id="Redis-的主从库同步的基本原理-三种模式"><a href="#Redis-的主从库同步的基本原理-三种模式" class="headerlink" title="Redis 的主从库同步的基本原理 三种模式"></a>Redis 的主从库同步的基本原理 三种模式</h3><ul>
+<li>全量复制</li>
+<li>基于长连接的命令传播</li>
+<li>增量复制</li>
+</ul>
+<h4 id="主从库间如何进行第一次同步？"><a href="#主从库间如何进行第一次同步？" class="headerlink" title="主从库间如何进行第一次同步？"></a>主从库间如何进行第一次同步？</h4><p>当我们启动多个 Redis 实例的时候，它们相互之间就可以通过 replicaof（Redis 5.0 之前使用 slaveof）命令形成主库和从库的关系，之后会按照三个阶段完成数据的第一次同步。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">replicaof  172.16.19.3  6379</span><br></pre></td></tr></table></figure>
+
+<p><img src="https://i.loli.net/2020/11/18/qt92VS7hZD4YWye.png" alt="image.png"></p>
+<h5 id="第一阶段"><a href="#第一阶段" class="headerlink" title="第一阶段"></a>第一阶段</h5><p>主从库间建立连接、协商同步的过程，主要是为全量复制做准备。在这一步，从库和主库建立起连接，并告诉主库即将进行同步，主库确认回复后，主从库间就可以开始同步了。</p>
+<p>具体来说，从库给主库发送 psync 命令，表示要进行数据同步，主库根据这个命令的参数来启动复制。psync 命令包含了主库的 runID 和复制进度 offset 两个参数。</p>
+<ul>
+<li><p>runID，是每个 Redis 实例启动时都会自动生成的一个随机 ID，用来唯一标记这个实例。当从库和主库第一次复制时，因为不知道主库的 runID，所以将 runID 设为“？”。</p>
+</li>
+<li><p>offset，此时设为 -1，表示第一次复制。</p>
+</li>
+</ul>
+<p>主库收到 psync 命令后，会用 FULLRESYNC 响应命令带上两个参数：主库 runID 和主库目前的复制进度 offset，返回给从库。从库收到响应后，会记录下这两个参数。</p>
+<p>这里有个地方需要注意，<strong>FULLRESYNC 响应表示第一次复制采用的全量复制，也就是说，主库会把当前所有的数据都复制给从库</strong> 。</p>
+<h5 id="第二阶段"><a href="#第二阶段" class="headerlink" title="第二阶段"></a>第二阶段</h5><p>主库将所有数据同步给从库。从库收到数据后，在本地完成数据加载。这个过程依赖于内存快照生成的 RDB 文件。</p>
+<p>具体来说，主库执行 bgsave 命令，生成 RDB 文件，接着将文件发给从库。从库接收到 RDB 文件后，会先清空当前数据库，然后加载 RDB 文件。这是因为从库在通过 replicaof 命令开始和主库同步前，可能保存了其他数据。为了避免之前数据的影响，从库需要先把当前数据库清空。</p>
+<p>在主库将数据同步给从库的过程中，主库不会被阻塞，仍然可以正常接收请求。否则，Redis 的服务就被中断了。但是，这些请求中的写操作并没有记录到刚刚生成的 RDB 文件中。为了保证主从库的数据一致性，主库会在内存中用专门的 replication buffer，记录 RDB 文件生成后收到的所有写操作。</p>
+<h5 id="第三个阶段"><a href="#第三个阶段" class="headerlink" title="第三个阶段"></a>第三个阶段</h5><p>主库会把第二阶段执行过程中新收到的写命令，再发送给从库。具体的操作是，当主库完成 RDB 文件发送后，就会把此时 replication buffer 中的修改操作发给从库，从库再重新执行这些操作。这样一来，主从库就实现同步了。</p>
+<h3 id="主从级联模式分担全量复制时的主库压力"><a href="#主从级联模式分担全量复制时的主库压力" class="headerlink" title="主从级联模式分担全量复制时的主库压力"></a>主从级联模式分担全量复制时的主库压力</h3><p>通过分析主从库间第一次数据同步的过程，你可以看到，一次全量复制中，对于主库来说，需要完成两个耗时的操作：生成 RDB 文件和传输 RDB 文件</p>
+<p>如果从库数量很多，而且都要和主库进行全量复制的话，就会导致主库忙于 fork 子进程生成 RDB 文件，进行数据全量同步。fork 这个操作会阻塞主线程处理正常请求，从而导致主库响应应用程序的请求速度变慢。此外，传输 RDB 文件也会占用主库的网络带宽，同样会给主库的资源使用带来压力。那么，有没有好的解决方法可以分担主库压力呢？</p>
+<p><strong>这就是“主 - 从 - 从”模式</strong></p>
+<p>通过“主 - 从 - 从”模式将主库生成 RDB 和传输 RDB 的压力，以级联的方式分散到从库上。</p>
+<p>简单来说，我们在部署主从集群的时候，可以手动选择一个从库（比如选择内存资源配置较高的从库），用于级联其他的从库。然后，我们可以再选择一些从库（例如三分之一的从库），在这些从库上执行如下命令，让它们和刚才所选的从库，建立起主从关系。</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">replicaof 所选从库的IP 6379</span><br></pre></td></tr></table></figure>
+
+<p>在进行同步时，不用再和主库进行交互了，只要和级联的从库进行写操作同步就行了，这就可以减轻主库上的压力，如下图所示：</p>
+<p><img src="https://i.loli.net/2020/11/19/eN7q6hAKkEft59l.png" alt="image.png"></p>
+<p>一旦主从库完成了全量复制，它们之间就会一直维护一个网络连接，主库会通过这个连接将后续陆续收到的命令操作再同步给从库，这个过程也称为<strong>基于长连接的命令传播</strong>，可以避免频繁建立连接的开销。</p>
+<h4 id="主从库间网络断了怎么办？增量复制"><a href="#主从库间网络断了怎么办？增量复制" class="headerlink" title="主从库间网络断了怎么办？增量复制"></a>主从库间网络断了怎么办？增量复制</h4><p>在 Redis 2.8 之前，如果主从库在命令传播时出现了网络闪断，那么，从库就会和主库重新进行一次全量复制，开销非常大。</p>
+<p>从 Redis 2.8 开始，网络断了之后，主从库会采用<strong>增量复制</strong>的方式继续同步。听名字大概就可以猜到它和全量复制的不同：全量复制是同步所有数据，而<strong>增量复制</strong>只会把主从库网络断连期间主库收到的命令，同步给从库。</p>
+<p>当主从库断连后，主库会把断连期间收到的写操作命令，写入 replication buffer，同时也会把这些操作命令也写入 <strong>repl_backlog_buffer</strong> 这个缓冲区。</p>
+<p>repl_backlog_buffer 是一个环形缓冲区, <strong>主库会记录自己写到的位置，从库则会记录自己已经读到的位置</strong></p>
+<p>刚开始的时候，主库和从库的写读位置在一起，这算是它们的起始位置。随着主库不断接收新的写操作，它在缓冲区中的写位置会逐步偏离起始位置，我们通常用偏移量来衡量这个偏移距离的大小，对主库来说，对应的偏移量就是 master_repl_offset。主库接收的新写操作越多，这个值就会越大。</p>
+<p>从库在复制完写操作命令后，它在缓冲区中的读位置也开始逐步偏移刚才的起始位置，此时，从库已复制的偏移量 slave_repl_offset 也在不断增加。正常情况下，这两个偏移量基本相等。</p>
+<p><img src="https://i.loli.net/2020/11/19/Rhav6kjNs9KdwDI.png" alt="image.png"></p>
+<p>主从库的连接恢复之后，从库首先会给主库发送 psync 命令，并把自己当前的 slave_repl_offset 发给主库，主库会判断自己的 master_repl_offset 和 slave_repl_offset 之间的差距。</p>
+<p>在网络断连阶段，主库可能会收到新的写操作命令，所以，一般来说，master_repl_offset 会大于 slave_repl_offset。此时，主库只用把 master_repl_offset 和 slave_repl_offset 之间的命令操作同步给从库就行。</p>
+<p>就像刚刚示意图的中间部分，主库和从库之间相差了 put d e 和 put d f 两个操作，在增量复制时，主库只需要把它们同步给从库，就行了。</p>
+<p><img src="https://i.loli.net/2020/11/19/TqZgkGxFKPhO6cM.png" alt="image.png"></p>
+<p>因为 repl_backlog_buffer 是一个环形缓冲区，所以在缓冲区写满后，主库会继续写入，此时，就会覆盖掉之前写入的操作。<strong>如果从库的读取速度比较慢，就有可能导致从库还未读取的操作被主库新写的操作覆盖了，这会导致主从库间的数据不一致</strong>。</p>
+<p>我们可以调整 repl_backlog_size 这个参数。这个参数和所需的缓冲空间大小有关。缓冲空间的计算公式是：缓冲空间大小 = 主库写入命令速度 * 操作大小 - 主从库间网络传输命令速度 * 操作大小。在实际应用中，考虑到可能存在一些突发的请求压力，我们通常需要把这个缓冲空间扩大一倍，即 repl_backlog_size = 缓冲空间大小 * 2，这也就是 repl_backlog_size 的最终值。</p>
+<p>举个例子，如果主库每秒写入 2000 个操作，每个操作的大小为 2KB，网络每秒能传输 1000 个操作，那么，有 1000 个操作需要缓冲起来，这就至少需要 2MB 的缓冲空间。否则，新写的命令就会覆盖掉旧操作了。为了应对可能的突发压力，我们最终把 repl_backlog_size 设为 4MB。</p>
+<p>这样一来，增量复制时主从库的数据不一致风险就降低了。不过，如果并发请求量非常大，连两倍的缓冲空间都存不下新操作请求的话，此时，主从库数据仍然可能不一致。可以考虑使用四倍或者切片集群来分担单个主库的请求压力</p>
+<h5 id="一个-Redis-实例的数据库不要太大"><a href="#一个-Redis-实例的数据库不要太大" class="headerlink" title="一个 Redis 实例的数据库不要太大"></a>一个 Redis 实例的数据库不要太大</h5><p>全量复制虽然耗时，但是对于从库来说，如果是第一次同步，全量复制是无法避免的，所以，小建议：一个 Redis 实例的数据库不要太大，一个实例大小在几 GB 级别比较合适，这样可以减少 RDB 文件生成、传输和重新加载的开销。另外，为了避免多个从库同时和主库进行全量复制，给主库过大的同步压力，我们也可以采用“主 - 从 - 从”这一级联模式，来缓解主库的压力。</p>
+<hr>
+<h5 id="如果在网络断开期间，repl-backlog-size环形缓冲区写满之后，从库是会丢失掉那部分被覆盖掉的数据，还是直接进行全量复制呢？"><a href="#如果在网络断开期间，repl-backlog-size环形缓冲区写满之后，从库是会丢失掉那部分被覆盖掉的数据，还是直接进行全量复制呢？" class="headerlink" title="如果在网络断开期间，repl_backlog_size环形缓冲区写满之后，从库是会丢失掉那部分被覆盖掉的数据，还是直接进行全量复制呢？"></a>如果在网络断开期间，repl_backlog_size环形缓冲区写满之后，从库是会丢失掉那部分被覆盖掉的数据，还是直接进行全量复制呢？</h5><blockquote>
+<ol>
+<li>一个从库如果和主库断连时间过长，造成它在主库repl_backlog_buffer的slave_repl_offset位置上的数据已经被覆盖掉了，此时从库和主库间将进行全量复制。</li>
+</ol>
+</blockquote>
+<blockquote>
+<ol start="2">
+<li>每个从库会记录自己的slave_repl_offset，每个从库的复制进度也不一定相同。在和主库重连进行恢复时，从库会通过psync命令把自己记录的slave_repl_offset发给主库，主库会根据从库各自的复制进度，来决定这个从库可以进行增量复制，还是全量复制。</li>
+</ol>
+</blockquote>
+<hr>
+<h5 id="AOF-记录的操作命令更全，相比于-RDB-丢失的数据更少。那么，为什么主从库间的复制不使用-AOF-呢？"><a href="#AOF-记录的操作命令更全，相比于-RDB-丢失的数据更少。那么，为什么主从库间的复制不使用-AOF-呢？" class="headerlink" title="AOF 记录的操作命令更全，相比于 RDB 丢失的数据更少。那么，为什么主从库间的复制不使用 AOF 呢？"></a>AOF 记录的操作命令更全，相比于 RDB 丢失的数据更少。那么，为什么主从库间的复制不使用 AOF 呢？</h5><blockquote>
+<p>1、RDB文件内容是经过压缩的二进制数据（不同数据类型数据做了针对性优化），文件很小。而AOF文件记录的是每一次写操作的命令，写操作越多文件会变得很大，其中还包括很多对同一个key的多次冗余操作。在主从全量数据同步时，传输RDB文件可以尽量降低对主库机器网络带宽的消耗，从库在加载RDB文件时，一是文件小，读取整个文件的速度会很快，二是因为RDB文件存储的都是二进制数据，从库直接按照RDB协议解析还原数据即可，速度会非常快，而AOF需要依次重放每个写命令，这个过程会经历冗长的处理逻辑，恢复速度相比RDB会慢得多，所以使用RDB进行主从全量同步的成本最低。</p>
+</blockquote>
+<blockquote>
+<p>2、假设要使用AOF做全量同步，意味着必须打开AOF功能，打开AOF就要选择文件刷盘的策略，选择不当会严重影响Redis性能。而RDB只有在需要定时备份和主从全量同步数据时才会触发生成一次快照。而在很多丢失数据不敏感的业务场景，其实是不需要开启AOF的。</p>
+</blockquote>
+<hr>
+<h5 id="repl-backlog-buffer理解"><a href="#repl-backlog-buffer理解" class="headerlink" title="repl_backlog_buffer理解"></a>repl_backlog_buffer理解</h5><blockquote>
+<p>repl_backlog_buffer：它是为了从库断开之后，如何找到主从差异数据而设计的环形缓冲区，从而避免全量同步带来的性能开销。如果从库断开时间太久，repl_backlog_buffer环形缓冲区被主库的写命令覆盖了，那么从库连上主库后只能乖乖地进行一次全量同步，所以repl_backlog_buffer配置尽量大一些，可以降低主从断开后全量同步的概率。而在repl_backlog_buffer中找主从差异的数据后，如何发给从库呢？这就用到了replication buffer。</p>
+</blockquote>
+<hr>
+<h5 id="replication-buffer-理解"><a href="#replication-buffer-理解" class="headerlink" title="replication buffer 理解"></a>replication buffer 理解</h5><blockquote>
+<p>Redis和客户端通信也好，和从库通信也好，Redis都需要给分配一个 内存buffer进行数据交互，客户端是一个client，从库也是一个client，我们每个client连上Redis后，Redis都会分配一个client buffer，所有数据交互都是通过这个buffer进行的：Redis先把数据写到这个buffer中，然后再把buffer中的数据发到client socket中再通过网络发送出去，这样就完成了数据交互。所以主从在增量同步时，从库作为一个client，也会分配一个buffer，只不过这个buffer专门用来传播用户的写命令到从库，保证主从数据一致，我们通常把它叫做replication buffer。</p>
+</blockquote>
+<hr>
+<h5 id="既然有这个内存buffer存在，那么这个buffer有没有限制呢？"><a href="#既然有这个内存buffer存在，那么这个buffer有没有限制呢？" class="headerlink" title="既然有这个内存buffer存在，那么这个buffer有没有限制呢？"></a>既然有这个内存buffer存在，那么这个buffer有没有限制呢？</h5><blockquote>
+<p>如果主从在传播命令时，因为某些原因从库处理得非常慢，那么主库上的这个buffer就会持续增长，消耗大量的内存资源，甚至OOM。所以Redis提供了client-output-buffer-limit参数限制这个buffer的大小，如果超过限制，主库会强制断开这个client的连接，也就是说从库处理慢导致主库内存buffer的积压达到限制后，主库会强制断开从库的连接，此时主从复制会中断，中断后如果从库再次发起复制请求，那么此时可能会导致恶性循环，引发复制风暴，这种情况需要格外注意。</p>
+</blockquote>
+<hr>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/25/5%E3%80%81%E5%86%85%E5%AD%98%E5%BF%AB%E7%85%A7%EF%BC%9A%E5%AE%95%E6%9C%BA%E5%90%8E%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D%EF%BC%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/06/25/5%E3%80%81%E5%86%85%E5%AD%98%E5%BF%AB%E7%85%A7%EF%BC%9A%E5%AE%95%E6%9C%BA%E5%90%8E%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D%EF%BC%9F/" class="post-title-link" itemprop="url">5、内存快照：宕机后，Redis如何实现快速恢复？</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-06-25 20:43:00" itemprop="dateCreated datePublished" datetime="2020-06-25T20:43:00+08:00">2020-06-25</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-23 23:28:14" itemprop="dateModified" datetime="2020-11-23T23:28:14+08:00">2020-11-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h3 id="内存快照：宕机后，Redis如何实现快速恢复？"><a href="#内存快照：宕机后，Redis如何实现快速恢复？" class="headerlink" title="内存快照：宕机后，Redis如何实现快速恢复？"></a>内存快照：宕机后，Redis如何实现快速恢复？</h3><p>和 AOF 相比，RDB 记录的是某一时刻的数据，并不是操作，所以，在做数据恢复时，我们可以直接把 RDB 文件读入内存，很快地完成恢复。</p>
+<h4 id="给哪些内存数据做快照？"><a href="#给哪些内存数据做快照？" class="headerlink" title="给哪些内存数据做快照？"></a>给哪些内存数据做快照？</h4><p>Redis 的数据都在内存中，为了提供所有数据的可靠性保证，它执行的是全量快照，也就是说，把内存中的所有数据都记录到磁盘中。</p>
+<p>对于 Redis 而言，它的单线程模型就决定了，我们要尽量避免所有会阻塞主线程的操作。</p>
+<p>Redis 提供了两个命令来生成 RDB 文件，分别是 save 和 bgsave。</p>
+<ul>
+<li><p>save：在主线程中执行，会导致阻塞；</p>
+</li>
+<li><p>bgsave：创建一个子进程，专门用于写入 RDB 文件，避免了主线程的阻塞，这也是 Redis RDB 文件生成的默认配置。</p>
+</li>
+</ul>
+<p>我们就可以通过 bgsave 命令来执行全量快照，这既提供了数据的可靠性保证，也避免了对 Redis 的性能影响。</p>
+<p>我们要关注的问题就是，在对内存数据做快照时，这些数据还能“动”吗? 也就是说，这些数据还能被修改吗？ 这个问题非常重要，这是因为，如果数据能被修改，那就意味着 Redis 还能正常处理写操作。否则，所有写操作都得等到快照完了才能执行，性能一下子就降低了。</p>
+<h4 id="快照时数据能修改吗"><a href="#快照时数据能修改吗" class="headerlink" title="快照时数据能修改吗?"></a>快照时数据能修改吗?</h4><p><strong>bgsave避免阻塞</strong>和正常处理写操作并不是一回事。此时，主线程的确没有阻塞，可以正常接收请求，但是，为了保证快照完整性，它只能处理读操作，因为不能修改正在执行快照的数据。</p>
+<p>为了快照而暂停写操作，肯定是不能接受的。所以这个时候，Redis 就会借助操作系统提供的写时复制技术（Copy-On-Write, COW），在执行快照的同时，正常处理写操作。</p>
+<p>简单来说，bgsave 子进程是由主线程 fork 生成的，可以共享主线程的所有内存数据。bgsave 子进程运行后，开始读取主线程的内存数据，并把它们写入 RDB 文件。</p>
+<p>此时，如果主线程对这些数据也都是读操作（例如图中的键值对 A），那么，主线程和 bgsave 子进程相互不影响。但是，如果主线程要修改一块数据（例如图中的键值对 C），那么，这块数据就会被复制一份，生成该数据的副本。然后，bgsave 子进程会把这个副本数据写入 RDB 文件，而在这个过程中，主线程仍然可以直接修改原来的数据。</p>
+<p><img src="https://i.loli.net/2020/11/18/Pbo8yck42eT5Fpt.png" alt="image.png"></p>
+<p>这既保证了快照的完整性，也允许主线程同时对数据进行修改，避免了对正常业务的影响。</p>
+<h4 id="多久做一次快照？可以每秒做一次快照吗？"><a href="#多久做一次快照？可以每秒做一次快照吗？" class="headerlink" title="多久做一次快照？可以每秒做一次快照吗？"></a>多久做一次快照？可以每秒做一次快照吗？</h4><p>虽然 bgsave 执行时不阻塞主线程，但是，如果<strong>频繁地执行全量快照，也会带来两方面的开销</strong>。</p>
+<p>一方面，频繁将全量数据写入磁盘，会给磁盘带来很大压力，多个快照竞争有限的磁盘带宽，前一个快照还没有做完，后一个又开始做了，容易造成恶性循环。</p>
+<p>另一方面，bgsave 子进程需要通过 fork 操作从主线程创建出来。虽然，子进程在创建后不会再阻塞主线程，但是，fork 这个创建过程本身会阻塞主线程，而且主线程的内存越大，阻塞时间越长。如果频繁 fork 出 bgsave 子进程，这就会频繁阻塞主线程了。</p>
+<h4 id="增量快照"><a href="#增量快照" class="headerlink" title="增量快照"></a>增量快照</h4><p>所谓增量快照，就是指，做了一次全量快照后，后续的快照只对修改的数据进行快照记录，这样可以避免每次全量快照的开销。</p>
+<p>在第一次做完全量快照后，T1 和 T2 时刻如果再做快照，我们只需要将被修改的数据写入快照文件就行。但是，这么做的前提是，我们需要记住哪些数据被修改了。你可不要小瞧这个“记住”功能，它需要我们使用额外的元数据信息去记录哪些数据被修改了，这会带来额外的空间开销问题</p>
+<p><img src="https://i.loli.net/2020/11/18/hNWU3HEBj68qCfR.png" alt="image.png"></p>
+<p>如果我们对每一个键值对的修改，都做个记录，那么，如果有 1 万个被修改的键值对，我们就需要有 1 万条额外的记录。而且，有的时候，键值对非常小，比如只有 32 字节，而记录它被修改的元数据信息，可能就需要 8 字节，这样的画，为了“记住”修改，引入的额外空间开销比较大。这对于内存资源宝贵的 Redis 来说，有些得不偿失</p>
+<h4 id="对比AOF"><a href="#对比AOF" class="headerlink" title="对比AOF"></a>对比AOF</h4><p>虽然跟 AOF 相比，快照的恢复速度快，但是，快照的频率不好把握，如果频率太低，两次快照间一旦宕机，就可能有比较多的数据丢失。如果频率太高，又会产生额外开销。</p>
+<h3 id="混合使用-AOF-日志和内存快照"><a href="#混合使用-AOF-日志和内存快照" class="headerlink" title="混合使用 AOF 日志和内存快照"></a>混合使用 AOF 日志和内存快照</h3><p>简单来说，内存快照以一定的频率执行，在两次快照之间，使用 AOF 日志记录这期间的所有命令操作。</p>
+<p>这样一来，快照不用很频繁地执行，这就避免了频繁 fork 对主线程的影响。而且，AOF 日志也只用记录两次快照间的操作，也就是说，不需要记录所有操作了，因此，就不会出现文件过大的情况了，也可以避免重写开销。</p>
+<p>如下图所示，T1 和 T2 时刻的修改，用 AOF 日志记录，等到第二次做全量快照时，就可以清空 AOF 日志，因为此时的修改都已经记录到快照中了，恢复时就不再用日志了。</p>
+<p><img src="https://i.loli.net/2020/11/18/hSn2JKtguwq1Lso.png" alt="image.png"></p>
+<p>这个方法既能享受到 RDB 文件快速恢复的好处，又能享受到 AOF 只记录操作命令的简单优势</p>
+<h5 id="持久化期间主进程的写操作，触发了写时复制，会不会阻塞主线程？"><a href="#持久化期间主进程的写操作，触发了写时复制，会不会阻塞主线程？" class="headerlink" title="持久化期间主进程的写操作，触发了写时复制，会不会阻塞主线程？"></a>持久化期间主进程的写操作，触发了写时复制，会不会阻塞主线程？</h5><blockquote>
+<p>写操作触发写时复制，如果都是小key，正常分配内存空间速度会很快，如果是bigkey或开启了内存大页机制，会有阻塞主线程的风险。</p>
+</blockquote>
+<h5 id="如何监控redis的读写比例呢？"><a href="#如何监控redis的读写比例呢？" class="headerlink" title="如何监控redis的读写比例呢？"></a>如何监控redis的读写比例呢？</h5><blockquote>
+<p>执行info all命令，可以看到每种命令的请求次数。</p>
+</blockquote>
+<h5 id="我们使用一个-2-核-CPU、4GB-内存、500GB-磁盘的云主机运行-Redis，Redis-数据库的数据量大小差不多是-2GB，我们使用了-RDB-做持久化保证。当时-Redis-的运行负载以修改操作为主，写读比例差不多在-8-2-左右，也就是说，如果有-100-个请求，80-个请求执行的是修改操作。你觉得，在这个场景下，用-RDB-做持久化有什么风险吗？你能帮着一起分析分析吗？"><a href="#我们使用一个-2-核-CPU、4GB-内存、500GB-磁盘的云主机运行-Redis，Redis-数据库的数据量大小差不多是-2GB，我们使用了-RDB-做持久化保证。当时-Redis-的运行负载以修改操作为主，写读比例差不多在-8-2-左右，也就是说，如果有-100-个请求，80-个请求执行的是修改操作。你觉得，在这个场景下，用-RDB-做持久化有什么风险吗？你能帮着一起分析分析吗？" class="headerlink" title="我们使用一个 2 核 CPU、4GB 内存、500GB 磁盘的云主机运行 Redis，Redis 数据库的数据量大小差不多是 2GB，我们使用了 RDB 做持久化保证。当时 Redis 的运行负载以修改操作为主，写读比例差不多在 8:2 左右，也就是说，如果有 100 个请求，80 个请求执行的是修改操作。你觉得，在这个场景下，用 RDB 做持久化有什么风险吗？你能帮着一起分析分析吗？"></a>我们使用一个 2 核 CPU、4GB 内存、500GB 磁盘的云主机运行 Redis，Redis 数据库的数据量大小差不多是 2GB，我们使用了 RDB 做持久化保证。当时 Redis 的运行负载以修改操作为主，写读比例差不多在 8:2 左右，也就是说，如果有 100 个请求，80 个请求执行的是修改操作。你觉得，在这个场景下，用 RDB 做持久化有什么风险吗？你能帮着一起分析分析吗？</h5><blockquote>
+<p>R:<strong>内存不足的风险</strong>：Redis fork 一个 bgsave 子进程进行 RDB 写入，如果主线程再接收到写操作，就会采用写时复制。写时复制需要给写操作的数据分配新的内存空间。本问题中写的比例为 80%，那么，在持久化过程中，为了保存 80% 写操作涉及的数据，写时复制机制会在实例内存中，为这些数据再分配新内存空间，分配的内存量相当于整个实例数据量的 80%，大约是 1.6GB，这样一来，整个系统内存的使用量就接近饱和了。此时，如果实例还有大量的新 key 写入或 key 修改，云主机内存很快就会被吃光。如果云主机开启了 Swap 机制，就会有一部分数据被换到磁盘上，当访问磁盘上的这部分数据时，性能会急剧下降。如果云主机没有开启 Swap，会直接触发 OOM，整个 Redis 实例会面临被系统 kill 掉的风险。</p>
+</blockquote>
+<blockquote>
+<p><strong>主线程和子进程竞争使用 CPU 的风险</strong>：生成 RDB 的子进程需要 CPU 核运行，主线程本身也需要 CPU 核运行，而且，如果 Redis 还启用了后台线程，此时，主线程、子进程和后台线程都会竞争 CPU 资源。由于云主机只有 2 核 CPU，这就会影响到主线程处理请求的速度。</p>
+</blockquote>
+<blockquote>
+<p>Kaito：a、内存资源风险：Redis fork子进程做RDB持久化，由于写的比例为80%，那么在持久化过程中，“写实复制”会重新分配整个实例80%的内存副本，大约需要重新分配1.6GB内存空间，这样整个系统的内存使用接近饱和，如果此时父进程又有大量新key写入，很快机器内存就会被吃光，如果机器开启了Swap机制，那么Redis会有一部分数据被换到磁盘上，当Redis访问这部分在磁盘上的数据时，性能会急剧下降，已经达不到高性能的标准（可以理解为武功被废）。如果机器没有开启Swap，会直接触发OOM，父子进程会面临被系统kill掉的风险。<br>b、CPU资源风险：虽然子进程在做RDB持久化，但生成RDB快照过程会消耗大量的CPU资源，虽然Redis处理处理请求是单线程的，但Redis Server还有其他线程在后台工作，例如AOF每秒刷盘、异步关闭文件描述符这些操作。由于机器只有2核CPU，这也就意味着父进程占用了超过一半的CPU资源，此时子进程做RDB持久化，可能会产生CPU竞争，导致的结果就是父进程处理请求延迟增大，子进程生成RDB快照的时间也会变长，整个Redis Server性能下降。<br>c、另外，可以再延伸一下，问题没有提到Redis进程是否绑定了CPU，如果绑定了CPU，那么子进程会继承父进程的CPU亲和性属性，子进程必然会与父进程争夺同一个CPU资源，整个Redis Server的性能必然会受到影响！所以如果Redis需要开启定时RDB和AOF重写，进程一定不要绑定CPU。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/23/4%E3%80%81-AOF%E6%97%A5%E5%BF%97%EF%BC%9A%E5%AE%95%E6%9C%BA%E4%BA%86%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1%EF%BC%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/06/23/4%E3%80%81-AOF%E6%97%A5%E5%BF%97%EF%BC%9A%E5%AE%95%E6%9C%BA%E4%BA%86%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1%EF%BC%9F/" class="post-title-link" itemprop="url">4、 AOF日志：宕机了，Redis如何避免数据丢失？</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-06-23 19:12:00" itemprop="dateCreated datePublished" datetime="2020-06-23T19:12:00+08:00">2020-06-23</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-23 23:27:43" itemprop="dateModified" datetime="2020-11-23T23:27:43+08:00">2020-11-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="AOF日志：宕机了，Redis如何避免数据丢失？"><a href="#AOF日志：宕机了，Redis如何避免数据丢失？" class="headerlink" title="AOF日志：宕机了，Redis如何避免数据丢失？"></a>AOF日志：宕机了，Redis如何避免数据丢失？</h2><p>目前，Redis 的持久化主要有两大机制，即 AOF（Append Only File）日志和 RDB 快照</p>
+<h4 id="AOF-日志是如何实现的？"><a href="#AOF-日志是如何实现的？" class="headerlink" title="AOF 日志是如何实现的？"></a>AOF 日志是如何实现的？</h4><p>我们比较熟悉的是数据库的写前日志（Write Ahead Log, WAL），也就是说，在实际写数据前，先把修改的数据记到日志文件中，以便故障时进行恢复<br>不过，AOF 日志正好相反，它是写后日志，“写后”的意思是 Redis 是先执行命令，把数据写入内存，然后才记录日志，如下图所示：</p>
+<p><img src="https://i.loli.net/2020/11/18/JeLgyhWprl7FzAS.png" alt="image.png"></p>
+<h4 id="AOF-为什么要先执行命令再记日志呢？"><a href="#AOF-为什么要先执行命令再记日志呢？" class="headerlink" title="AOF 为什么要先执行命令再记日志呢？"></a>AOF 为什么要先执行命令再记日志呢？</h4><p>传统数据库的日志，例如 redo log（重做日志），记录的是修改后的数据，而 AOF 里记录的是 Redis 收到的每一条命令，这些命令是以文本形式保存的。</p>
+<p>但是，为了避免额外的检查开销，Redis 在向 AOF 里面记录日志的时候，并不会先去对这些命令进行语法检查。所以，如果先记日志再执行命令的话，日志中就有可能记录了错误的命令，Redis 在使用日志恢复数据时，就可能会出错。</p>
+<p>而写后日志这种方式，就是先让系统执行命令，只有命令能执行成功，才会被记录到日志中，否则，系统就会直接向客户端报错。所以，Redis 使用写后日志这一方式的一大好处是，可以避免出现记录错误命令的情况。</p>
+<p>除此之外，AOF 还有一个好处：<strong>它是在命令执行后才记录日志，所以不会阻塞当前的写操作</strong>。</p>
+<h4 id="AOF-也有两个潜在的风险"><a href="#AOF-也有两个潜在的风险" class="headerlink" title="AOF 也有两个潜在的风险"></a>AOF 也有两个潜在的风险</h4><p>首先，如果刚执行完一个命令，还没有来得及记日志就宕机了，那么这个命令和相应的数据就有丢失的风险。如果此时 Redis 是用作缓存，还可以从后端数据库重新读入数据进行恢复，但是，如果 Redis 是直接用作数据库的话，此时，因为命令没有记入日志，所以就无法用日志进行恢复了。</p>
+<p>其次，AOF 虽然避免了对当前命令的阻塞，但可能会给下一个操作带来阻塞风险。这是因为，AOF 日志也是在主线程中执行的，如果在把日志文件写入磁盘时，磁盘写压力大，就会导致写盘很慢，进而导致后续的操作也无法执行了。</p>
+<h3 id="三种写回策略"><a href="#三种写回策略" class="headerlink" title="三种写回策略"></a>三种写回策略</h3><p>AOF 机制给我们提供了三个选择，也就是 AOF 配置项 appendfsync 的三个可选值</p>
+<ul>
+<li>Always，同步写回：每个写命令执行完，立马同步地将日志写回磁盘；</li>
+<li>Everysec，每秒写回：每个写命令执行完，只是先把日志写到 AOF 文件的内存缓冲区，每隔一秒把缓冲区中的内容写入磁盘；</li>
+<li>No，操作系统控制的写回：每个写命令执行完，只是先把日志写到 AOF 文件的内存缓冲区，由操作系统决定何时将缓冲区内容写回磁盘。</li>
+</ul>
+<p>针对避免主线程阻塞和减少数据丢失问题，这三种写回策略都无法做到两全其美</p>
+<ul>
+<li>“同步写回”可以做到基本不丢数据，但是它在每一个写命令后都有一个慢速的落盘操作，不可避免地会影响主线程性能；</li>
+<li>虽然“操作系统控制的写回”在写完缓冲区后，就可以继续执行后续的命令，但是落盘的时机已经不在 Redis 手中了，只要 AOF 记录没有写回磁盘，一旦宕机对应的数据就丢失了；</li>
+<li>“每秒写回”采用一秒写回一次的频率，避免了“同步写回”的性能开销，虽然减少了对系统性能的影响，但是如果发生宕机，上一秒内未落盘的命令操作仍然会丢失。所以，这只能算是，在避免影响主线程性能和避免数据丢失两者间取了个折中。</li>
+</ul>
+<p><img src="https://i.loli.net/2020/11/18/NPRJSeAOXDflvHC.png" alt="image.png"></p>
+<p>到这里，我们就可以根据系统对高性能和高可靠性的要求，来选择使用哪种写回策略了。总结一下就是：想要获得高性能，就选择 No 策略；如果想要得到高可靠性保证，就选择 Always 策略；如果允许数据有一点丢失，又希望性能别受太大影响的话，那么就选择 Everysec 策略。</p>
+<p>按照系统的性能需求选定了写回策略，并不是“高枕无忧”了。毕竟，AOF 是以文件的形式在记录接收到的所有写命令。随着接收的写命令越来越多，AOF 文件会越来越大。这也就意味着，我们一定要小心 AOF 文件过大带来的性能问题。</p>
+<p>这里的“性能问题”，主要在于以下三个方面：一是，文件系统本身对文件大小有限制，无法保存过大的文件；二是，如果文件太大，之后再往里面追加命令记录的话，效率也会变低；三是，如果发生宕机，AOF 中记录的命令要一个个被重新执行，用于故障恢复，如果日志文件太大，整个恢复过程就会非常缓慢，这就会影响到 Redis 的正常使用。</p>
+<h3 id="AOF-重写机制"><a href="#AOF-重写机制" class="headerlink" title="AOF 重写机制"></a>AOF 重写机制</h3><p>为什么重写机制可以把日志文件变小呢? 实际上，重写机制具有“多变一”功能。所谓的“多变一”，也就是说，旧日志文件中的多条命令，在重写后的新日志中变成了一条命令。</p>
+<p>AOF 文件是以追加的方式，逐一记录接收到的写命令的。当一个键值对被多条写命令反复修改时，AOF 文件会记录相应的多条命令。但是，在重写的时候，是根据这个键值对当前的最新状态，为它生成对应的写入命令。这样一来，一个键值对在重写日志中只用一条命令就行了，而且，在日志恢复时，只用执行这条命令，就可以直接完成这个键值对的写入了。</p>
+<p><img src="https://i.loli.net/2020/11/18/LJMPt1kmizIFgy3.png" alt="image.png"></p>
+<p>虽然 AOF 重写后，日志文件会缩小，但是，要把整个数据库的最新数据的操作日志都写回磁盘，仍然是一个非常耗时的过程。这时，我们就要继续关注另一个问题了：重写会不会阻塞主线程？</p>
+<h3 id="AOF-重写会阻塞吗"><a href="#AOF-重写会阻塞吗" class="headerlink" title="AOF 重写会阻塞吗?"></a>AOF 重写会阻塞吗?</h3><p>和 AOF 日志由主线程写回不同，重写过程是由后台子进程 bgrewriteaof 来完成的，这也是为了避免阻塞主线程，导致数据库性能下降。</p>
+<p><strong>一个拷贝，两处日志</strong></p>
+<p>“一个拷贝”就是指<br>每次执行重写时，主线程 fork 出后台的 bgrewriteaof 子进程。此时，fork 会把主线程的内存拷贝一份给 bgrewriteaof 子进程，fork子进程时，子进程是会拷贝父进程的页表，即虚实映射关系，而不会拷贝物理内存。子进程复制了父进程页表，也能共享访问父进程的内存数据了，此时，类似于有了父进程的所有内存数据。然后，bgrewriteaof 子进程就可以在不影响主线程的情况下，逐一把拷贝的数据写成操作，记入重写日志。</p>
+<p><strong>两处日志</strong><br>因为主线程未阻塞，仍然可以处理新来的操作。此时，如果有写操作，第一处日志就是指正在使用的 AOF 日志，Redis 会把这个操作写到它的缓冲区</p>
+<p>第二处日志，就是指新的 AOF 重写日志。这个操作也会被写到重写日志的缓冲区。这样，重写日志也不会丢失最新的操作。等到拷贝数据的所有操作记录重写完成后，重写日志记录的这些最新操作也会写入新的 AOF 文件，以保证数据库最新状态的记录。此时，我们就可以用新的 AOF 文件替代旧文件了。</p>
+<p><img src="https://i.loli.net/2020/11/18/56blyvH82IcUFa7.png" alt="image.png"></p>
+<p>每次 AOF 重写时，Redis 会先执行一个内存拷贝，用于重写；然后，使用两个日志保证在重写过程中，新写入的数据不会丢失。而且，因为 Redis 采用额外的线程进行数据重写，所以，这个过程并不会阻塞主线程。</p>
+<h5 id="为什么主线程和AOF重写缓冲连起来了呢？"><a href="#为什么主线程和AOF重写缓冲连起来了呢？" class="headerlink" title="为什么主线程和AOF重写缓冲连起来了呢？"></a>为什么主线程和AOF重写缓冲连起来了呢？</h5><p>主线程收到写命令后，会把这个写命令写入AOF重写缓冲区，这是由主线程来写的，所以连线在一起了：）</p>
+<h4 id="关于huge-page"><a href="#关于huge-page" class="headerlink" title="关于huge page"></a>关于huge page</h4><p>Huge page。这个特性大家在使用Redis也要注意。Huge page对提升TLB命中率比较友好，因为在相同的内存容量下，使用huge page可以减少页表项，TLB就可以缓存更多的页表项，能减少TLB miss的开销。</p>
+<p>但是，这个机制对于Redis这种喜欢用fork的系统来说，的确不太友好，尤其是在Redis的写入请求比较多的情况下。因为fork后，父进程修改数据采用写时复制，复制的粒度为一个内存页。如果只是修改一个256B的数据，父进程需要读原来的内存页，然后再映射到新的物理地址写入。一读一写会造成读写放大。如果内存页越大（例如2MB的大页），那么读写放大也就越严重，对Redis性能造成影响。</p>
+<p>Huge page在实际使用Redis时是建议关掉的。</p>
+<h4 id="AOF-日志重写的时候，是由-bgrewriteaof-子进程来完成的，不用主线程参与，非阻塞也是指子进程的执行不阻塞主线程。但是，这个重写过程有没有其他潜在的阻塞风险呢？如果有的话，会在哪里阻塞？"><a href="#AOF-日志重写的时候，是由-bgrewriteaof-子进程来完成的，不用主线程参与，非阻塞也是指子进程的执行不阻塞主线程。但是，这个重写过程有没有其他潜在的阻塞风险呢？如果有的话，会在哪里阻塞？" class="headerlink" title="AOF 日志重写的时候，是由 bgrewriteaof 子进程来完成的，不用主线程参与，非阻塞也是指子进程的执行不阻塞主线程。但是，这个重写过程有没有其他潜在的阻塞风险呢？如果有的话，会在哪里阻塞？"></a>AOF 日志重写的时候，是由 bgrewriteaof 子进程来完成的，不用主线程参与，非阻塞也是指子进程的执行不阻塞主线程。但是，这个重写过程有没有其他潜在的阻塞风险呢？如果有的话，会在哪里阻塞？</h4><blockquote>
+<p>a、fork子进程，fork这个瞬间一定是会阻塞主线程的，fork采用操作系统提供的写时复制(Copy On Write)机制，就是为了避免一次性拷贝大量内存数据给子进程造成的长时间阻塞问题，但fork子进程需要拷贝进程必要的数据结构，其中有一项就是拷贝内存页表（虚拟内存和物理内存的映射索引表），这个拷贝过程会消耗大量CPU资源，拷贝完成之前整个进程是会阻塞的，阻塞时间取决于整个实例的内存大小，实例越大，内存页表越大，fork阻塞时间越久。拷贝内存页表完成后，子进程与父进程指向相同的内存地址空间，也就是说此时虽然产生了子进程，但是并没有申请与父进程相同的内存大小。那什么时候父子进程才会真正内存分离呢？“写时复制”顾名思义，就是在写发生时，才真正拷贝内存真正的数据，这个过程中，父进程也可能会产生阻塞的风险，就是下面介绍的场景。</p>
+</blockquote>
+<blockquote>
+<p>b、fork出的子进程指向与父进程相同的内存地址空间，此时子进程就可以执行AOF重写，把内存中的所有数据写入到AOF文件中。但是此时父进程依旧是会有流量写入的，如果父进程操作的是一个已经存在的key，那么这个时候父进程就会真正拷贝这个key对应的内存数据，申请新的内存空间，这样逐渐地，父子进程内存数据开始分离，父子进程逐渐拥有各自独立的内存空间。因为内存分配是以页为单位进行分配的，默认4k，如果父进程此时操作的是一个bigkey，重新申请大块内存耗时会变长，可能会产阻塞风险。另外，如果操作系统开启了内存大页机制(Huge Page，页面大小2M)，那么父进程申请内存时阻塞的概率将会大大提高，所以在Redis机器上需要关闭Huge Page机制。Redis每次fork生成RDB或AOF重写完成后，都可以在Redis log中看到父进程重新申请了多大的内存空间。</p>
+</blockquote>
+<h4 id="AOF-重写也有一个重写日志，为什么它不共享使用-AOF-本身的日志呢？"><a href="#AOF-重写也有一个重写日志，为什么它不共享使用-AOF-本身的日志呢？" class="headerlink" title="AOF 重写也有一个重写日志，为什么它不共享使用 AOF 本身的日志呢？"></a>AOF 重写也有一个重写日志，为什么它不共享使用 AOF 本身的日志呢？</h4><blockquote>
+<p>AOF重写不复用AOF本身的日志，一个原因是父子进程写同一个文件必然会产生竞争问题，控制竞争就意味着会影响父进程的性能。二是如果AOF重写过程中失败了，那么原本的AOF文件相当于被污染了，无法做恢复使用。所以Redis AOF重写一个新文件，重写失败的话，直接删除这个文件就好了，不会对原先的AOF文件产生影响。等重写完成之后，直接替换旧文件即可。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/21/3%E3%80%81Redis%E9%AB%98%E6%80%A7%E8%83%BDIO%E6%A8%A1%E5%9E%8B%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8D%95%E7%BA%BF%E7%A8%8BRedis%E8%83%BD%E9%82%A3%E4%B9%88%E5%BF%AB%EF%BC%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/06/21/3%E3%80%81Redis%E9%AB%98%E6%80%A7%E8%83%BDIO%E6%A8%A1%E5%9E%8B%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8D%95%E7%BA%BF%E7%A8%8BRedis%E8%83%BD%E9%82%A3%E4%B9%88%E5%BF%AB%EF%BC%9F/" class="post-title-link" itemprop="url">3、Redis高性能IO模型：为什么单线程Redis能那么快？</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-06-21 13:10:00" itemprop="dateCreated datePublished" datetime="2020-06-21T13:10:00+08:00">2020-06-21</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-23 23:27:08" itemprop="dateModified" datetime="2020-11-23T23:27:08+08:00">2020-11-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Redis高性能IO模型：为什么单线程Redis能那么快？"><a href="#Redis高性能IO模型：为什么单线程Redis能那么快？" class="headerlink" title="Redis高性能IO模型：为什么单线程Redis能那么快？"></a>Redis高性能IO模型：为什么单线程Redis能那么快？</h2><h4 id="Redis-真的只有单线程吗？"><a href="#Redis-真的只有单线程吗？" class="headerlink" title="Redis 真的只有单线程吗？"></a>Redis 真的只有单线程吗？</h4><p>Redis 是单线程，主要是指 <strong>Redis 的网络 IO 和键值对读写是由一个线程来完成的</strong>，这也是 Redis 对外提供键值存储服务的主要流程。但 <strong>Redis 的其他功能，比如持久化、异步删除、集群数据同步等，其实是由额外的线程执行的</strong>。</p>
+<p>Redis 单线程是指它对网络 IO 和数据读写的操作采用了一个线程，而采用单线程的一个核心原因是避免多线程开发的并发控制问题</p>
+<h4 id="单线程-Redis-为什么那么快？"><a href="#单线程-Redis-为什么那么快？" class="headerlink" title="单线程 Redis 为什么那么快？"></a>单线程 Redis 为什么那么快？</h4><p>通常来说，单线程的处理能力要比多线程差很多，但是 Redis 却能使用单线程模型达到每秒数十万级别的处理能力，这是为什么呢？其实，这是 Redis 多方面设计选择的一个综合结果。</p>
+<p>一方面，Redis 的大部分操作在内存上完成，再加上它采用了高效的数据结构，例如哈希表和跳表，这是它实现高性能的一个重要原因。另一方面，就是 Redis 采用了<strong>多路复用机制</strong>，使其在网络 IO 操作中能并发处理大量的客户端请求，实现高吞吐率。</p>
+<p>我们要弄明白网络操作的基本 IO 模型和潜在的阻塞点。毕竟，Redis 采用单线程进行 IO，如果线程被阻塞了，就无法进行多路复用了。</p>
+<h4 id="基本-IO-模型与阻塞点"><a href="#基本-IO-模型与阻塞点" class="headerlink" title="基本 IO 模型与阻塞点"></a>基本 IO 模型与阻塞点</h4><p><img src="https://i.loli.net/2020/11/17/i3arVHvIzAtwfmE.png" alt="image.png"></p>
+<p>其中，bind/listen、accept、recv、parse 和 send 属于网络 IO 处理，而 get 属于键值数据操作。既然 Redis 是单线程，那么，最基本的一种实现是在一个线程中依次执行上面说的这些操作。</p>
+<p>但是，在这里的网络 IO 操作中，有潜在的阻塞点，分别是 accept() 和 recv()。当 Redis 监听到一个客户端有连接请求，但一直未能成功建立起连接时，会阻塞在 accept() 函数这里，导致其他客户端无法和 Redis 建立连接。类似的，当 Redis 通过 recv() 从一个客户端读取数据时，如果数据一直没有到达，Redis 也会一直阻塞在 recv()。</p>
+<p>这就导致 Redis 整个线程阻塞，无法处理其他客户端请求，效率很低。不过，幸运的是，socket 网络模型本身支持非阻塞模式。</p>
+<h4 id="非阻塞模式"><a href="#非阻塞模式" class="headerlink" title="非阻塞模式"></a>非阻塞模式</h4><p>在 socket 模型中，不同操作调用后会返回不同的套接字类型。socket() 方法会返回主动套接字，然后调用 listen() 方法，将主动套接字转化为监听套接字，此时，可以监听来自客户端的连接请求。最后，调用 accept() 方法接收到达的客户端连接，并返回已连接套接字。</p>
+<p><img src="https://i.loli.net/2020/11/17/VgRMFDhscyKIadU.png" alt="image.png"></p>
+<p>针对监听套接字，我们可以设置非阻塞模式：当 Redis 调用 accept() 但一直未有连接请求到达时，Redis 线程可以返回处理其他操作，而不用一直等待。但是，你要注意的是，调用 accept() 时，已经存在监听套接字了。</p>
+<p>虽然 Redis 线程可以不用继续等待，但是总得有机制继续在监听套接字上等待后续连接请求，并在有请求时通知 Redis。</p>
+<h4 id="基于多路复用的高性能-I-O-模型"><a href="#基于多路复用的高性能-I-O-模型" class="headerlink" title="基于多路复用的高性能 I/O 模型"></a>基于多路复用的高性能 I/O 模型</h4><p>Linux 中的 IO 多路复用机制是指一个线程处理多个 IO 流，就是我们经常听到的 select/epoll 机制。简单来说，在 Redis 只运行单线程的情况下，该机制允许内核中，同时存在多个监听套接字和已连接套接字。内核会一直监听这些套接字上的连接请求或数据请求。一旦有请求到达，就会交给 Redis 线程处理，这就实现了一个 Redis 线程处理多个 IO 流的效果。</p>
+<p>下图就是基于多路复用的 Redis IO 模型。图中的多个 FD 就是刚才所说的多个套接字。Redis 网络框架调用 epoll 机制，让内核监听这些套接字。此时，Redis 线程不会阻塞在某一个特定的监听或已连接套接字上，也就是说，不会阻塞在某一个特定的客户端请求处理上。正因为此，Redis 可以同时和多个客户端连接并处理请求，从而提升并发性。</p>
+<p><img src="https://i.loli.net/2020/11/17/VgRMFDhscyKIadU.png" alt="image.png"></p>
+<p>为了在请求到达时能通知到 Redis 线程，select/epoll 提供了<strong>基于事件的回调机制，即针对不同事件的发生，调用相应的处理函数</strong>。</p>
+<p>那么，回调机制是怎么工作的呢？其实，select/epoll 一旦监测到 FD 上有请求到达时，就会触发相应的事件。</p>
+<p>这些事件会被放进一个事件队列，Redis 单线程对该事件队列不断进行处理。这样一来，Redis 无需一直轮询是否有请求实际发生，这就可以避免造成 CPU 资源浪费。同时，Redis 在对事件队列中的事件进行处理时，会调用相应的处理函数，这就实现了基于事件的回调。因为 Redis 一直在对事件队列进行处理，所以能及时响应客户端请求，提升 Redis 的响应性能。</p>
+<h4 id="Redis-基本-IO-模型中还有哪些潜在的性能瓶颈？"><a href="#Redis-基本-IO-模型中还有哪些潜在的性能瓶颈？" class="headerlink" title="Redis 基本 IO 模型中还有哪些潜在的性能瓶颈？"></a>Redis 基本 IO 模型中还有哪些潜在的性能瓶颈？</h4><blockquote>
+<p>author: 希望能进一步理解阻塞操作对 Redis 单线程性能的影响。在 Redis 基本 IO 模型中，主要是主线程在执行操作，任何耗时的操作，例如 bigkey、全量返回等操作，都是潜在的性能瓶颈。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/19/2%E3%80%81Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9A%E5%BF%AB%E9%80%9F%E7%9A%84Redis%E6%9C%89%E5%93%AA%E4%BA%9B%E6%85%A2%E6%93%8D%E4%BD%9C%EF%BC%9F/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/06/19/2%E3%80%81Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9A%E5%BF%AB%E9%80%9F%E7%9A%84Redis%E6%9C%89%E5%93%AA%E4%BA%9B%E6%85%A2%E6%93%8D%E4%BD%9C%EF%BC%9F/" class="post-title-link" itemprop="url">2、Redis数据结构：快速的Redis有哪些慢操作？</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-06-19 08:08:00" itemprop="dateCreated datePublished" datetime="2020-06-19T08:08:00+08:00">2020-06-19</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-23 23:26:22" itemprop="dateModified" datetime="2020-11-23T23:26:22+08:00">2020-11-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Redis数据结构：快速的Redis有哪些慢操作？"><a href="#Redis数据结构：快速的Redis有哪些慢操作？" class="headerlink" title="Redis数据结构：快速的Redis有哪些慢操作？"></a>Redis数据结构：快速的Redis有哪些慢操作？</h2><p>redis 它接收到一个键值对操作后，能以微秒级别的速度找到数据，并快速完成操作</p>
+<p>数据库这么多，为啥 Redis 能有这么突出的表现呢？</p>
+<ul>
+<li>一方面，这是因为它是内存数据库，所有操作都在内存上完成，内存的访问速度本身就很快。</li>
+<li>另一方面，这要归功于它的数据结构。这是因为，键值对是按一定的数据结构来组织的，操作键值对最终就是对数据结构进行增删改查操作，所以高效的数据结构是 Redis 快速处理数据的基础。</li>
+</ul>
+<p>redis的数据类型：</p>
+<ul>
+<li>String（字符串）</li>
+<li>List（列表）</li>
+<li>Hash（哈希）</li>
+<li>Set（集合）</li>
+<li>Sorted Set（有序集合）</li>
+</ul>
+<p>其实，这些只是 Redis 键值对中值的数据类型，也就是数据的保存形式，而并非数据结构。</p>
+<p>底层数据结构一共有 6 种，分别是</p>
+<ul>
+<li>简单动态字符串</li>
+<li>双向链表</li>
+<li>压缩列表</li>
+<li>哈希表</li>
+<li>跳表</li>
+<li>整数数组</li>
+</ul>
+<p>它们和数据类型的对应关系如下图所示：</p>
+<p><img src="https://i.loli.net/2020/11/12/h3jNaY9ymwSHpqG.png" alt="Redis数据类型和底层数据结构的对应关系"></p>
+<h4 id="键和值用什么结构组织？"><a href="#键和值用什么结构组织？" class="headerlink" title="键和值用什么结构组织？"></a>键和值用什么结构组织？</h4><p>Redis 使用了一个哈希表来保存所有键值对。<br>一个哈希表，其实就是一个数组，数组的每个元素称为一个哈希桶。<br>一个哈希表是由多个哈希桶组成的，每个哈希桶中保存了键值对数据。<br>哈希桶中的元素保存的并不是值本身，而是指向具体值的指针。<br>不管值是 String，还是集合类型，哈希桶中的元素都是指向它们的指针</p>
+<p><img src="https://i.loli.net/2020/11/17/HM5N1rL7bdiPvlo.png" alt="image.png"></p>
+<p>哈希桶中的 entry 元素中保存了<em>key和</em>value指针，分别指向了实际的键和值，这样一来，即使值是一个集合，也可以通过*value指针被查找到。</p>
+<p>因为这个哈希表保存了所有的键值对，所以，也把它称为全局哈希表。哈希表的最大好处很明显，就是让我们可以用 O(1) 的时间复杂度来快速查找到键值对——我们只需要计算键的哈希值，就可以知道它所对应的哈希桶位置，然后就可以访问相应的 entry 元素。</p>
+<p>这个查找过程主要依赖于哈希计算，和数据量的多少并没有直接关系。也就是说，不管哈希表里有 10 万个键还是 100 万个键，我们只需要一次计算就能找到相应的键。</p>
+<p>但是，如果你只是了解了哈希表的 O(1) 复杂度和快速查找特性，那么，当你往 Redis 中写入大量数据后，就可能发现操作有时候会突然变慢了。这其实是因为你忽略了一个潜在的风险点，那就是哈希表的冲突问题和 rehash 可能带来的操作阻塞。</p>
+<h4 id="为什么哈希表操作变慢了？"><a href="#为什么哈希表操作变慢了？" class="headerlink" title="为什么哈希表操作变慢了？"></a>为什么哈希表操作变慢了？</h4><p>当你往哈希表中写入更多数据时，哈希冲突是不可避免的问题。这里的哈希冲突，也就是指，两个 key 的哈希值和哈希桶计算对应关系时，正好落在了同一个哈希桶中。</p>
+<p>毕竟，哈希桶的个数通常要少于 key 的数量，这也就是说，难免会有一些 key 的哈希值对应到了同一个哈希桶中。</p>
+<p>Redis 解决哈希冲突的方式，就是链式哈希。链式哈希也很容易理解，就是指<strong>同一个哈希桶中的多个元素用一个链表来保存，它们之间依次用指针连接</strong>。</p>
+<p><img src="https://i.loli.net/2020/11/17/zOd7TgHEI4of1ib.png" alt="image.png"></p>
+<p>entry1、entry2 和 entry3 都需要保存在哈希桶 3 中，导致了哈希冲突。此时，entry1 元素会通过一个<em>next指针指向 entry2，同样，entry2 也会通过</em>next指针指向 entry3。这样一来，即使哈希桶 3 中的元素有 100 个，我们也可以通过 entry 元素中的指针，把它们连起来。这就形成了一个链表，也叫作哈希冲突链。</p>
+<p>但是，这里依然存在一个问题，哈希冲突链上的元素只能通过指针逐一查找再操作。如果哈希表里写入的数据越来越多，哈希冲突可能也会越来越多，这就会导致某些哈希冲突链过长，进而导致这个链上的元素查找耗时长，效率降低。对于追求“快”的 Redis 来说，这是不太能接受的。</p>
+<h4 id="rehash-操作"><a href="#rehash-操作" class="headerlink" title="rehash 操作"></a>rehash 操作</h4><p>所以，Redis 会对哈希表做 rehash 操作。rehash 也就是增加现有的哈希桶数量，让逐渐增多的 entry 元素能在更多的桶之间分散保存，减少单个桶中的元素数量，从而减少单个桶中的冲突。那具体怎么做呢？</p>
+<p>其实，为了使 rehash 操作更高效，Redis 默认使用了两个全局哈希表：哈希表 1 和哈希表 2。一开始，当你刚插入数据时，默认使用哈希表 1，此时的哈希表 2 并没有被分配空间。随着数据逐步增多，Redis 开始执行 rehash，这个过程分为三步：</p>
+<ul>
+<li>给哈希表 2 分配更大的空间，例如是当前哈希表 1 大小的两倍；</li>
+<li>把哈希表 1 中的数据重新映射并拷贝到哈希表 2 中；</li>
+<li>释放哈希表 1 的空间。</li>
+</ul>
+<p>到此，我们就可以从哈希表 1 切换到哈希表 2，用增大的哈希表 2 保存更多数据，而原来的哈希表 1 留作下一次 rehash 扩容备用。</p>
+<p>这个过程看似简单，但是第二步涉及大量的数据拷贝，如果一次性把哈希表 1 中的数据都迁移完，会造成 Redis 线程阻塞，无法服务其他请求。此时，Redis 就无法快速访问数据了。</p>
+<p>为了避免这个问题，Redis 采用了<strong>渐进式 rehash</strong>。</p>
+<p>简单来说就是在第二步拷贝数据时，Redis 仍然正常处理客户端请求，每处理一个请求时，从哈希表 1 中的第一个索引位置开始，顺带着将这个索引位置上的所有 entries 拷贝到哈希表 2 中；等处理下一个请求时，再顺带拷贝哈希表 1 中的下一个索引位置的 entries。如下图所示：</p>
+<p>这样就巧妙地把一次性大量拷贝的开销，分摊到了多次处理请求的过程中，避免了耗时操作，保证了数据的快速访问。</p>
+<p><img src="https://i.loli.net/2020/11/17/tE7J3k6aNCATeOQ.png" alt="image.png"></p>
+<h4 id="String操作效率"><a href="#String操作效率" class="headerlink" title="String操作效率"></a>String操作效率</h4><p>对于 String 类型来说，找到哈希桶就能直接增删改查了，所以，哈希表的 O(1) 操作复杂度也就是它的复杂度了。</p>
+<p>但是，对于集合类型来说，即使找到哈希桶了，还要在集合中再进一步操作</p>
+<h4 id="集合数据操作效率"><a href="#集合数据操作效率" class="headerlink" title="集合数据操作效率"></a>集合数据操作效率</h4><p>和 String 类型不同，一个集合类型的值，第一步是通过全局哈希表找到对应的哈希桶位置，第二步是在集合中再增删改查。那么，集合的操作效率和哪些因素相关呢？</p>
+<p>首先，与集合的底层数据结构有关。例如，使用哈希表实现的集合，要比使用链表实现的集合访问效率更高。其次，操作效率和这些操作本身的执行特点有关，比如读写一个元素的操作要比读写所有元素的效率高。</p>
+<h4 id="有哪些底层数据结构？"><a href="#有哪些底层数据结构？" class="headerlink" title="有哪些底层数据结构？"></a>有哪些底层数据结构？</h4><h5 id="整数数组和双向链表"><a href="#整数数组和双向链表" class="headerlink" title="整数数组和双向链表"></a>整数数组和双向链表</h5><p>整数数组和双向链表也很常见，它们的操作特征都是顺序读写，也就是通过数组下标或者链表的指针逐个元素访问，操作复杂度基本是 O(N)，操作效率比较低</p>
+<h5 id="压缩列表"><a href="#压缩列表" class="headerlink" title="压缩列表"></a>压缩列表</h5><p>压缩列表实际上类似于一个数组，数组中的每一个元素都对应保存一个数据。和数组不同的是，压缩列表在表头有三个字段 zlbytes、zltail 和 zllen，分别表示列表长度、列表尾的偏移量和列表中的 entry 个数；压缩列表在表尾还有一个 zlend，表示列表结束。</p>
+<p>在压缩列表中，如果我们要查找定位第一个元素和最后一个元素，可以通过表头三个字段的长度直接定位，复杂度是 O(1)。而查找其他元素时，就没有这么高效了，只能逐个查找，此时的复杂度就是 O(N) 了。</p>
+<p><img src="https://i.loli.net/2020/11/17/fyVIcrtHBAdi5K4.png" alt="image.png"></p>
+<h5 id="跳表"><a href="#跳表" class="headerlink" title="跳表"></a>跳表</h5><p>有序链表只能逐一查找元素，导致操作起来非常缓慢，于是就出现了跳表。具体来说，跳表在链表的基础上，<strong>增加了多级索引，通过索引位置的几个跳转，实现数据的快速定位</strong>，如下图所示：</p>
+<p><img src="https://i.loli.net/2020/11/17/Is1KBAmHbfn8oiR.png" alt="image.png"></p>
+<p>如果我们要在链表中查找 33 这个元素，只能从头开始遍历链表，查找 6 次，直到找到 33 为止。此时，复杂度是 O(N)，查找效率很低。</p>
+<p>为了提高查找速度，增加一级索引：从第一个元素开始，每两个元素选一个出来作为索引。这些索引再通过指针指向原始的链表。例如，从前两个元素中抽取元素 1 作为一级索引，从第三、四个元素中抽取元素 11 作为一级索引。此时，我们只需要 4 次查找就能定位到元素 33 了。</p>
+<p>如果我们还想再快，可以再增加二级索引：从一级索引中，再抽取部分元素作为二级索引。例如，从一级索引中抽取 1、27、100 作为二级索引，二级索引指向一级索引。这样，我们只需要 3 次查找，就能定位到元素 33 了。</p>
+<p>可以看到，这个查找过程就是在多级索引上跳来跳去，最后定位到元素。这也正好符合“跳”表的叫法。当数据量很大时，跳表的查找复杂度就是 O(logN)。</p>
+<h4 id="时间复杂度分类"><a href="#时间复杂度分类" class="headerlink" title="时间复杂度分类"></a>时间复杂度分类</h4><p><img src="https://i.loli.net/2020/11/17/S84iAcbXgeW1xy2.png" alt="image.png"></p>
+<ul>
+<li>单元素操作是基础；</li>
+<li>范围操作非常耗时</li>
+<li>统计操作通常高效</li>
+<li>例外情况只有几个</li>
+</ul>
+<p>第一，<strong>单元素操作，是指每一种集合类型对单个数据实现的增删改查操作</strong>。例如，Hash 类型的 HGET、HSET 和 HDEL，Set 类型的 SADD、SREM、SRANDMEMBER 等。这些操作的复杂度由集合采用的数据结构决定，例如，HGET、HSET 和 HDEL 是对哈希表做操作，所以它们的复杂度都是 O(1)；Set 类型用哈希表作为底层数据结构时，它的 SADD、SREM、SRANDMEMBER 复杂度也是 O(1)。</p>
+<p>这里，有个地方你需要注意一下，集合类型支持同时对多个元素进行增删改查，例如 Hash 类型的 HMGET 和 HMSET，Set 类型的 SADD 也支持同时增加多个元素。此时，这些操作的复杂度，就是由单个元素操作复杂度和元素个数决定的。例如，HMSET 增加 M 个元素时，复杂度就从 O(1) 变成 O(M) 了。</p>
+<p>第二，<strong>范围操作，是指集合类型中的遍历操作，可以返回集合中的所有数据</strong>，比如 Hash 类型的 HGETALL 和 Set 类型的 SMEMBERS，或者返回一个范围内的部分数据，比如 List 类型的 LRANGE 和 ZSet 类型的 ZRANGE。这类操作的复杂度一般是 O(N)，比较耗时，我们应该尽量避免。</p>
+<p>Redis 从 2.8 版本开始提供了 SCAN 系列操作（包括 HSCAN，SSCAN 和 ZSCAN），这类操作实现了渐进式遍历，每次只返回有限数量的数据。这样一来，相比于 HGETALL、SMEMBERS 这类操作来说，就避免了一次性返回所有元素而导致的 Redis 阻塞。</p>
+<p>第三，统计操作，是指集合类型对集合中所有元素个数的记录，例如 LLEN 和 SCARD。这类操作复杂度只有 O(1)，这是因为当集合类型采用压缩列表、双向链表、整数数组这些数据结构时，这些结构中专门记录了元素的个数统计，因此可以高效地完成相关操作。</p>
+<p>第四，例外情况，是指某些数据结构的特殊记录，例如压缩列表和双向链表都会记录表头和表尾的偏移量。这样一来，对于 List 类型的 LPOP、RPOP、LPUSH、RPUSH 这四个操作来说，它们是在列表的头尾增删元素，这就可以通过偏移量直接定位，所以它们的复杂度也只有 O(1)，可以实现快速操作。</p>
+<h3 id="小结"><a href="#小结" class="headerlink" title="小结"></a>小结</h3><p>Redis 之所以能快速操作键值对，一方面是因为 O(1) 复杂度的哈希表被广泛使用，包括 String、Hash 和 Set，它们的操作复杂度基本由哈希表决定，另一方面，Sorted Set 也采用了 O(logN) 复杂度的跳表。不过，集合类型的范围操作，因为要遍历底层数据结构，复杂度通常是 O(N)。这里，我的建议是：用其他命令来替代，例如可以用 SCAN 来代替，避免在 Redis 内部产生费时的全集合遍历操作。</p>
+<p>当然，我们不能忘了复杂度较高的 List 类型，它的两种底层实现结构：双向链表和压缩列表的操作复杂度都是 O(N)。因此，我的建议是：因地制宜地使用 List 类型。例如，既然它的 POP/PUSH 效率很高，那么就将它主要用于 FIFO 队列场景，而不是作为一个可以随机读写的集合。</p>
+<h5 id="整数数组和压缩列表在查找时间复杂度方面并没有很大的优势，那为什么-Redis-还会把它们作为底层数据结构呢？"><a href="#整数数组和压缩列表在查找时间复杂度方面并没有很大的优势，那为什么-Redis-还会把它们作为底层数据结构呢？" class="headerlink" title="整数数组和压缩列表在查找时间复杂度方面并没有很大的优势，那为什么 Redis 还会把它们作为底层数据结构呢？"></a>整数数组和压缩列表在查找时间复杂度方面并没有很大的优势，那为什么 Redis 还会把它们作为底层数据结构呢？</h5><blockquote>
+<p>R:  整数数组和压缩列表的设计，充分体现了 Redis“又快又省”特点中的“省”，也就是节省内存空间。整数数组和压缩列表都是在内存中分配一块地址连续的空间，然后把集合中的元素一个接一个地放在这块空间内，非常紧凑。因为元素是挨个连续放置的，我们不用再通过额外的指针把元素串接起来，这就避免了额外指针带来的空间开销。如图展示下这两个结构的内存布局。整数数组和压缩列表中的 entry 都是实际的集合元素，它们一个挨一个保存，非常节省内存空间。</p>
+</blockquote>
+<blockquote>
+<p>Redis 之所以采用不同的数据结构，其实是在性能和内存使用效率之间进行的平衡</p>
+</blockquote>
+<p><img src="https://i.loli.net/2020/11/19/tIOjAY6M7KcUNpT.png" alt="image.png"></p>
+<blockquote>
+<p>Kaito：两方面原因：</p>
+</blockquote>
+<blockquote>
+<p>1、内存利用率，数组和压缩列表都是非常紧凑的数据结构，它比链表占用的内存要更少。Redis是内存数据库，大量数据存到内存中，此时需要做尽可能的优化，提高内存的利用率。</p>
+</blockquote>
+<blockquote>
+<p>2、数组对CPU高速缓存支持更友好，所以Redis在设计时，集合数据元素较少情况下，默认采用内存紧凑排列的方式存储，同时利用CPU高速缓存不会降低访问速度。当数据元素超过设定阈值后，避免查询时间复杂度太高，转为哈希和跳表数据结构存储，保证查询效率。</p>
+</blockquote>
+<h5 id="如果在数组上是随机访问，对CPU高速缓存还友好不？：）"><a href="#如果在数组上是随机访问，对CPU高速缓存还友好不？：）" class="headerlink" title="如果在数组上是随机访问，对CPU高速缓存还友好不？：）"></a>如果在数组上是随机访问，对CPU高速缓存还友好不？：）</h5><blockquote>
+<p>Kaito：数组通过下标访问数据虽然是O(1)，但是由于cpu读取数据从高速缓存读，而高速缓存的容量很小。比如cpu要读取nums[0]，cpu发现高速缓存没有nums[0]，就会从内存把num[0]以及nums[0]附近的数据(比如还拖取了nums[1])都拖取到高速缓存中。如果接下来cpu要读取nums[1]，由于nums[1]已经在告诉缓存中，那么cpu能马上拿到数据。但如果cpu想要读取nums[100]，显然高速缓存中没有这个数据，然后就又要到内存中把nums[100]和他附近的数据拖到高速缓存。假设高速缓存只能存两个数字。那么因为读取nums[100]，就会把原本在nums[0]的数据替换掉。如果接下来cpu又读nums[0]。。那么就又要从内存中获取。</p>
+</blockquote>
+<blockquote>
+<p>也就是说，对cpu友好，说的并不是你理解的时间复杂度。而是对于这种从高速缓存读取数据的行为。在《深入理解操作系统中》中把要读取的数据附近的数据一起拖到高速缓存的行为，叫空间局部性。</p>
+</blockquote>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/18/1%E3%80%81Redis-%E5%BC%95%E5%87%BA%E7%9A%84%E9%97%AE%E9%A2%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/06/18/1%E3%80%81Redis-%E5%BC%95%E5%87%BA%E7%9A%84%E9%97%AE%E9%A2%98/" class="post-title-link" itemprop="url">1、Redis 引出的问题</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-06-18 12:03:00" itemprop="dateCreated datePublished" datetime="2020-06-18T12:03:00+08:00">2020-06-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-23 23:25:27" itemprop="dateModified" datetime="2020-11-23T23:25:27+08:00">2020-11-23</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <p>#Redis 引出的问题</p>
+<p>为了保证数据的可靠性，Redis 需要在磁盘上读写 AOF 和 RDB，但在高并发场景里，这就会直接带来两个新问题：</p>
+<ul>
+<li>一个是写 AOF 和 RDB 会造成 Redis 性能抖动。(AOF，将Redis的操作日志以追加的方式写入文件。 RDB，将Redis在内存中的数据库记录定时dump到磁盘上的RDB持久化。)</li>
+<li>另一个是 Redis 集群数据同步和实例恢复时，读 RDB 比较慢，限制了同步和恢复速度。</li>
+</ul>
+<p>使用 Redis不同公司的“玩法”却不太一样，比如说，有做<strong>缓存</strong> 的，有做<strong>数据库</strong> 的，也有用做<strong>分布式锁</strong>的。不过，他们遇见的“坑”，总体来说集中在四个方面：</p>
+<ul>
+<li><p>CPU 使用上的“坑”，例如数据结构的复杂度、跨 CPU 核的访问；</p>
+</li>
+<li><p>内存使用上的“坑”，例如主从同步和 AOF 的内存竞争；</p>
+</li>
+<li><p>存储持久化上的“坑”，例如在 SSD 上做快照的性能抖动；</p>
+</li>
+<li><p>网络通信上的“坑”，例如多实例时的异常网络丢包。</p>
+</li>
+</ul>
+<h2 id="Redis-知识全景图"><a href="#Redis-知识全景图" class="headerlink" title="Redis 知识全景图"></a>Redis 知识全景图</h2><p><img src="https://i.loli.net/2020/11/12/mWzZDSbtMrByacs.png" alt="Redis知识全景图"></p>
+<p>两大维度，三大主线</p>
+<p>“两大维度”就是指系统维度和应用维度，“三大主线”也就是指高性能、高可靠和高可扩展（可以简称为“三高”）。</p>
+<h2 id="Redis-的问题画像图"><a href="#Redis-的问题画像图" class="headerlink" title="Redis 的问题画像图"></a>Redis 的问题画像图</h2><p><img src="https://i.loli.net/2020/11/23/2ezApVfKLnhBvGm.png" alt="Redis的问题画像图"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/15/Structure/PAAS%E3%80%81IAAS%E5%92%8CSAAS%E4%B9%8B%E9%97%B4%E7%9A%84%E5%8C%BA%E5%88%AB/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -362,863 +1424,11 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/07/Algorithm/InsertionSort/insertion/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Nolan Chic">
-      <meta itemprop="description" content="Action speak louder than words.">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Nolan's Notes">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2018/08/07/Algorithm/InsertionSort/insertion/" class="post-title-link" itemprop="url">InsertionSort</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2018-08-07 18:17:32" itemprop="dateCreated datePublished" datetime="2018-08-07T18:17:32+08:00">2018-08-07</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-09-16 18:47:34" itemprop="dateModified" datetime="2020-09-16T18:47:34+08:00">2020-09-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Algorithm/InsertionSort/" itemprop="url" rel="index"><span itemprop="name">InsertionSort</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="直接插入排序"><a href="#直接插入排序" class="headerlink" title="直接插入排序"></a>直接插入排序</h2><p>思路分析：在要排序的一组数中，假设前面的数已经是排好顺序的，现在要把第n个数插到前面的有序数中，使得这n个数也是排好顺序的。如此反复循环，直到全部排好顺序。</p>
-<p>第一趟比较前两个数，然后把第二个数按大小插入到有序表中； 第二趟把第三个数据与前两个数从后向前扫描，把第三个数按大小插入到有序表中；依次进行下去，进行了(n-1)趟扫描以后就完成了整个排序过程。</p>
-<p>直接插入排序是由两层嵌套循环组成的。外层循环标识并决定待比较的数值。内层循环为待比较数值确定其最终位置。直接插入排序是将待比较的数值与它的前一个数值进行比较，所以外层循环是从第二个数值开始的。当前一数值比待比较数值大的情况下继续循环比较，直到找到比待比较数值小的并将待比较数值置入其后一位置，结束该次循环。</p>
-<p>插入排序的基本方法是：每步将一个待排序的记录按其关键字的大小插到前面已经排序的序列中的适当位置，直到全部记录插入完毕为止。</p>
-<h4 id="PHP实现"><a href="#PHP实现" class="headerlink" title="PHP实现"></a>PHP实现</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F;直接插入排序</span><br><span class="line">function InsertSort(array &amp;$arr)&#123;</span><br><span class="line">    $count &#x3D; count($arr);</span><br><span class="line">    &#x2F;&#x2F;数组中第一个元素作为一个已经存在的有序表</span><br><span class="line">    for($i &#x3D; 1;$i &lt; $count;$i ++)&#123;</span><br><span class="line">        $temp &#x3D; $arr[$i];   &#x2F;&#x2F;设置哨兵&#x2F;临时值</span><br><span class="line">        &#x2F;&#x2F;$arr[$i];&#x2F;&#x2F;需要插入的元素; $arr[$j];&#x2F;&#x2F;需要比较的元素</span><br><span class="line">        for($j &#x3D; $i - 1;$j &gt;&#x3D; 0 &amp;&amp; $arr[$j] &gt; $temp;$j --)&#123;</span><br><span class="line">            &#x2F;&#x2F;发现插入的元素要小，交换位置</span><br><span class="line">            &#x2F;&#x2F;将后边的元素与前面的元素互换</span><br><span class="line">            $arr[$j + 1] &#x3D; $arr[$j];</span><br><span class="line">            &#x2F;&#x2F;将前面的数设置为 当前需要交换的数</span><br><span class="line">            $arr[$j] &#x3D; $temp;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<h4 id="GOLANG实现"><a href="#GOLANG实现" class="headerlink" title="GOLANG实现"></a>GOLANG实现</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F;直接插入排序</span><br><span class="line">func sort_insert(arr []int)&#123;</span><br><span class="line">	for i:&#x3D;1;i&lt;len(arr);i++&#123;</span><br><span class="line">		tmp :&#x3D; arr[i]</span><br><span class="line">		for j:&#x3D;i-1;j&gt;&#x3D;0 &amp;&amp; arr[j] &gt; tmp; j--&#123;</span><br><span class="line">			arr[j],arr[j+1] &#x3D; tmp,arr[j];</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">	arr :&#x3D; [...]int&#123;6,3,8,2,9,1&#125;</span><br><span class="line">	slice :&#x3D; arr[:]</span><br><span class="line">	fmt.Println(slice)</span><br><span class="line">	fmt.Println()</span><br><span class="line">	sort_insert(slice)</span><br><span class="line">	fmt.Println(slice)</span><br><span class="line">	&#125;</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/07/Algorithm/SelectionSort/Selection/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Nolan Chic">
-      <meta itemprop="description" content="Action speak louder than words.">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Nolan's Notes">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2018/08/07/Algorithm/SelectionSort/Selection/" class="post-title-link" itemprop="url">SelectionSort</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2018-08-07 18:16:00" itemprop="dateCreated datePublished" datetime="2018-08-07T18:16:00+08:00">2018-08-07</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-09-16 18:47:34" itemprop="dateModified" datetime="2020-09-16T18:47:34+08:00">2020-09-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Algorithm/SelectionSort/" itemprop="url" rel="index"><span itemprop="name">SelectionSort</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h2 id="选择排序"><a href="#选择排序" class="headerlink" title="选择排序"></a>选择排序</h2><p>原理： 在一列数字中，选出最小数与第一个位置的数交换。然后在剩下的数当中再找最小的与第二个位置的数交换，如此循环到倒数第二个数和最后一个数比较为止。(以下都是升序排列，即从小到大排列)</p>
-<p>举例说明： $arr = array(6, 3, 8, 2, 9, 1);</p>
-<h3 id="第一轮："><a href="#第一轮：" class="headerlink" title="第一轮："></a>第一轮：</h3><p>第一次比较， 第一个数 6 与（3,  8,  2,  9,  1)中 3 比较，6大，当前最小数为3，位置为 1</p>
-<p>第二次比较， 最小数字 3 与（3,  8,  2,  9,  1)中 8 比较，3小，当前最小数为3，位置为 1</p>
-<p>第三次比较， 最小数字 3 与（3,  8,  2,  9,  1)中 2 比较，3大，当前最小数为2，位置为 3</p>
-<p>第四次比较， 最小数字 2 与（3,  8,  2,  9,  1)中 9 比较，2小，当前最小数为2，位置为 3</p>
-<p>第五次比较， 最小数字 2 与（3,  8,  2,  9,  1)中 1 比较，2大，当前最小数为1，位置为 5</p>
-<p>第一轮比较完成后，确定最小数为1，小于第一个数6，交换位置上的数，交换后结果为 1  3  8  2  9  6</p>
-<p>总结：第一轮比较，可以确定第一个位置的最小值。</p>
-<h3 id="第二轮："><a href="#第二轮：" class="headerlink" title="第二轮："></a>第二轮：</h3><p>第一次比较， 3与（8， 2,  9,  6）中 8 比较，3小，当前最小数为3，位置为 1</p>
-<p>第二次比较， 3与（8， 2,  9,  6）中 2 比较，3大，当前最小数为2，位置为 3</p>
-<p>第三次比较， 2与（8， 2,  9,  6）中 9 比较，2小，当前最小数为2，位置为 3</p>
-<p>第四次比较， 2与（8， 2,  9,  6）中 6 比较，2小，当前最小数为2，位置为 3</p>
-<p>第二轮比较完成后，确定最小数为2，小于第二个数3，交换位置上的数，交换后结果为 1  2  8  3  9  6</p>
-<p>总结：第二轮比较，可以确定第二个位置的最小值。至此确定了前两个位置上的数。</p>
-<h3 id="第三轮："><a href="#第三轮：" class="headerlink" title="第三轮："></a>第三轮：</h3><p>第一次比较， 8与（ 3,  9,  6）中 3 比较，8大，当前最小数为3，位置为3</p>
-<p>第二次比较， 3与（ 3,  9,  6）中 9 比较，3小，当前最小数为3，位置为3</p>
-<p>第三次比较， 6与（ 3,  9,  6）中 6 比较，3小，当前最小数为3，位置为3</p>
-<p>第三轮比较完成后，确定最小数为3，小于第三个数8，交换位置上的数，交换后结果为 1  2  3  8  9  6</p>
-<p>总结：第三轮比较，可以确定第三个位置的最小值。至此确定了前三个位置上的数。</p>
-<h3 id="第四轮"><a href="#第四轮" class="headerlink" title="第四轮"></a>第四轮</h3><p>第一次比较， 8与（ 9,  6）中 9 比较，8小，当前最小数为8，位置为 3</p>
-<p>第二次比较， 8与（ 9,  6）中 6 比较，8大，当前最小数为6，位置为 5</p>
-<p>第四轮比较完成后，确定最小数为6，小于第四个数8交换位置上的数，交换后结果为 1  2  3  6  9  8</p>
-<p>总结：第四轮比较，可以确定第四个个位置的最小值。至此确定了前四个位置上的数。</p>
-<h3 id="第五轮："><a href="#第五轮：" class="headerlink" title="第五轮："></a>第五轮：</h3><p>第一次比较， 9与 8 比较，9大，当前最小数为8，位置为5</p>
-<p>第五轮比较完成后，确定最小数为8，小于第五个数9，交换位置上的数，交换后结果为 1  2  3  6  8  9</p>
-<p>总结：第五轮比较，可以确定第五个个位置的最小值。至此确定了前5个位置上的数。</p>
-<p>##总结</p>
-<p>###综合以上五轮比较，每一轮比较都可以确定一个位置，对于N个数，比较N-1轮可以确定N个位置上的数，因为确定了N-1个位置，最后一个位置也就确定了。每i轮需要排序的次数为 N-i</p>
-<h4 id="PHP实现"><a href="#PHP实现" class="headerlink" title="PHP实现"></a>PHP实现</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><span class="line">function selection_sort($arr)</span><br><span class="line">&#123;</span><br><span class="line">    for ($i&#x3D;0;$i&lt;count($arr)-1;$i++)&#123;   &#x2F;&#x2F; N个数,需要进行N-1轮次, 每轮次需要进行 (N-第几轮次) 次比较</span><br><span class="line"></span><br><span class="line">        $minIndex &#x3D; $i;</span><br><span class="line"></span><br><span class="line">        for ($j&#x3D;$i+1;$j&lt;count($arr);$j++)&#123;  &#x2F;&#x2F;j代表未排列好的第二个值开始到结尾</span><br><span class="line">            if($arr[$j] &lt;$arr[$minIndex]  )&#123;</span><br><span class="line">                $minIndex &#x3D; $j;</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        if($i !&#x3D; $minIndex)&#123;</span><br><span class="line">            $temp &#x3D; $arr[$i];</span><br><span class="line">            $arr[$i] &#x3D; $arr[$minIndex];</span><br><span class="line">            $arr[$minIndex] &#x3D; $temp;</span><br><span class="line">            unset($temp);</span><br><span class="line">        &#125;</span><br><span class="line"></span><br><span class="line">    &#125;</span><br><span class="line">    return $arr;</span><br><span class="line"></span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">echo &quot;&lt;pre&gt;&quot;;</span><br><span class="line">$arr &#x3D; array(6, 3, 8, 2, 9, 1);</span><br><span class="line">$result &#x3D; selection_sort($arr);</span><br><span class="line">print_r($result);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-
-<h4 id="GOLANG实现"><a href="#GOLANG实现" class="headerlink" title="GOLANG实现"></a>GOLANG实现</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">func sort_selection(arr []int) []int&#123;</span><br><span class="line"></span><br><span class="line">	for i:&#x3D;0;i&lt;len(arr);i++&#123;</span><br><span class="line">		minIndex :&#x3D; i</span><br><span class="line">		for j:&#x3D;i+1;j&lt;len(arr) ;j++  &#123;</span><br><span class="line">			if arr[minIndex] &gt; arr[j]&#123;</span><br><span class="line">				minIndex &#x3D; j</span><br><span class="line">			&#125;</span><br><span class="line">		&#125;</span><br><span class="line">		if(i !&#x3D; minIndex)&#123;</span><br><span class="line">			arr[i],arr[minIndex] &#x3D; arr[minIndex],arr[i]</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	return arr</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">	arr :&#x3D; [...]int&#123;6,3,8,2,9,1&#125;</span><br><span class="line">	slice :&#x3D; arr[:]</span><br><span class="line">	fmt.Println(slice)</span><br><span class="line">	fmt.Println()</span><br><span class="line">	fmt.Println(sort_selection(slice))</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/07/Algorithm/QuickSort/quick/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Nolan Chic">
-      <meta itemprop="description" content="Action speak louder than words.">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Nolan's Notes">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2018/08/07/Algorithm/QuickSort/quick/" class="post-title-link" itemprop="url">Quick Sort</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2018-08-07 17:57:00" itemprop="dateCreated datePublished" datetime="2018-08-07T17:57:00+08:00">2018-08-07</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-09-16 18:47:34" itemprop="dateModified" datetime="2020-09-16T18:47:34+08:00">2020-09-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Algorithm/QuickSort/" itemprop="url" rel="index"><span itemprop="name">QuickSort</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="快速排序"><a href="#快速排序" class="headerlink" title="快速排序"></a>快速排序</h1><h3 id="基本思想："><a href="#基本思想：" class="headerlink" title="基本思想："></a>基本思想：</h3><p>快速排序（Quicksort）是对冒泡排序的一种改进。他的基本思想是：通过一趟排序将待排记录分割成独立的两部分，其中一部分的关键字均比另一部分记录的关键字小，则可分别对这两部分记录继续进行快速排序，整个排序过程可以递归进行，以达到整个序列有序的目的。</p>
-<h3 id="基本算法步骤："><a href="#基本算法步骤：" class="headerlink" title="基本算法步骤："></a>基本算法步骤：</h3><p>举个栗子：<br>假如现在待排序记录是：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">6   2   7   3   8   9</span><br></pre></td></tr></table></figure>
-
-<p>第一步、创建变量 $low 指向记录中的第一个记录，$high 指向最后一个记录，$pivot 作为枢轴赋值为待排序记录的第一个元素（不一定是第一个），这里：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$low &#x3D; 0;</span><br><span class="line">$high &#x3D; 5;</span><br><span class="line">$pivot &#x3D; 6;</span><br></pre></td></tr></table></figure>
-<p>第二步、我们要把所有比 $pivot 小的数移动到 $pivot 的左面，所以我们可以开始寻找比6小的数，从 $high 开始，从右往左找，不断递减变量 $high 的值，我们找到第一个下标 3 的数据比 6 小，于是把数据 3 移到下标 0 的位置（$low 指向的位置），把下标 0 的数据 6 移到下标 3，完成第一次比较：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F;这时候,$high 减小为 3</span><br><span class="line">$low &#x3D; 0;</span><br><span class="line">$high &#x3D; 3;</span><br><span class="line">$pivot &#x3D; 6;</span><br></pre></td></tr></table></figure>
-
-<p>第三步、我们开始第二次比较，这次要变成找比 $pivot 大的了，而且要从前往后找了。递加变量 $low，发现下标 2 的数据是第一个比 $pivot 大的，于是用下标 2 （$low 指向的位置）的数据 7 和 指向的下标 3 （$high 指向的位置）的数据的 6 做交换，数据状态变成下表：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">3   2   6   7   8   9</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;这时候,$high 减小为 3</span><br><span class="line">$low &#x3D; 2;</span><br><span class="line">$high &#x3D; 3;</span><br><span class="line">$pivot &#x3D; 6;</span><br></pre></td></tr></table></figure>
-
-<p>完成第二步和第三步我们称为完成一个循环。</p>
-<p>第四步（也就是开启下一个循环）、模仿第二步的过程执行。<br>第五步、模仿第三步的过程执行。</p>
-<p>执行完第二个循环之后，数据状态如下：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">3   2   6   7   8   9</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;这时候,$high 减小为 3</span><br><span class="line">$low &#x3D; 2;</span><br><span class="line">$high &#x3D; 2;</span><br><span class="line">$pivot &#x3D; 6;</span><br></pre></td></tr></table></figure>
-
-<p>到了这一步，我们发现 $low 和 $high“碰头”了：他们都指向了下标 2。于是，第一遍比较结束。得到结果如下，凡是 $pivot(=6) 左边的数都比它小，凡是 $pivot 右边的数都比它大。</p>
-<p>然后，对 、$pivot 两边的数据 {3，2} 和 {7，8，9}，再分组分别进行上述的过程，直到不能再分组为止。</p>
-<p>注意：第一遍快速排序不会直接得到最终结果，只会把比k大和比k小的数分到k的两边。为了得到最后结果，需要再次对下标2两边的数组分别执行此步骤，然后再分解数组，直到数组不能再分解为止（只有一个数据），才能得到正确结果。</p>
-<blockquote>
-<p>Partition（）函数才是整段代码的核心，因为该函数的功能是：<br>选取当中的一个关键字，比如选择第一个关键字。然后想尽办法将它放到某个位置，<br>使得它左边的值都比它小，右边的值都比它大，我们将这样的关键字成为枢轴（pivot）。</p>
-</blockquote>
-<h2 id="算法实现："><a href="#算法实现：" class="headerlink" title="算法实现："></a>算法实现：</h2><h3 id="PHP实现"><a href="#PHP实现" class="headerlink" title="PHP实现"></a>PHP实现</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F;交换函数</span><br><span class="line">function swap(array &amp;$arr,$a,$b)&#123;</span><br><span class="line">    $tmp &#x3D; $arr[$a];</span><br><span class="line">    $arr[$a] &#x3D; $arr[$b];</span><br><span class="line">    $arr[$b] &#x3D; $tmp;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;选取数组当中的一个关键字，使得它处于数组某个位置时，左边的值比它小，右边的值比它大，该关键字叫做枢轴</span><br><span class="line">&#x2F;&#x2F;使枢轴记录到位，并返回其所在位置</span><br><span class="line">function Partition(&amp;$arr,$low,$hight)&#123;</span><br><span class="line">    $pivot_value &#x3D; $arr[$low];  &#x2F;&#x2F;选取子数组第一个元素作为枢轴</span><br><span class="line">    while ($low &lt; $hight)   &#x2F;&#x2F;从数组的两端交替向中间扫描（当 $low 和 $high 碰头时结束循环）</span><br><span class="line">    &#123;</span><br><span class="line">        while ($low &lt; $hight &amp;&amp; $arr[$hight] &gt; $pivot_value)  &#x2F;&#x2F;如果改为$arr[$hight] &gt;&#x3D; $pivot_value，则最坏情况不但会堕落为O(n*n).而且除了每次比较的消耗外，还会产生n次交互的额外开销</span><br><span class="line">        &#123;</span><br><span class="line">            $hight--;</span><br><span class="line">        &#125;</span><br><span class="line">        swap($arr,$low,$hight);  &#x2F;&#x2F;终于遇到一个比$pivot小的数，将其放到数组低端</span><br><span class="line">        while ($low &lt; $hight &amp;&amp; $pivot_value &gt; $arr[$low])    &#x2F;&#x2F;如果改为$pivot_value &gt;&#x3D; $arr[$low]，则最坏情况不但会堕落为O(n*n).而且除了每次比较的消耗外，还会产生n次交互的额外开销</span><br><span class="line">        &#123;</span><br><span class="line">            $low++;</span><br><span class="line">        &#125;</span><br><span class="line">        swap($arr,$low,$hight);  &#x2F;&#x2F;终于遇到一个比$pivot大的数，将其放到数组高端</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    return $low;  &#x2F;&#x2F;返回high也行，毕竟最后low和high都是停留在pivot下标处</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">function Qsort(array &amp;$arr, $low, $hight)&#123;</span><br><span class="line">    &#x2F;&#x2F;当 $low &gt;&#x3D; $hight 时表示不能再进行分组，已经能够得出正确结果了</span><br><span class="line">    if($low &gt;&#x3D; $hight)&#123;</span><br><span class="line">        return ;</span><br><span class="line">    &#125;</span><br><span class="line">    $pivot_index &#x3D; Partition($arr,$low,$hight);  &#x2F;&#x2F;将$arr[$low...$high]一分为二，算出枢轴值</span><br><span class="line">    Qsort($arr,$low,$pivot_index-1);    &#x2F;&#x2F;对低子表（$pivot左边的记录）进行递归排序</span><br><span class="line">    Qsort($arr,$pivot_index+1,$hight);  &#x2F;&#x2F;对高子表（$pivot右边的记录）进行递归排序</span><br><span class="line">    </span><br><span class="line">&#125;</span><br><span class="line">&#x2F;&#x2F;主函数</span><br><span class="line">function QuickSort(array &amp;$arr)&#123;</span><br><span class="line">    $low &#x3D; 0;</span><br><span class="line">    $hight &#x3D; count($arr) -1;</span><br><span class="line">    Qsort($arr,$low,$hight);   &#x2F;&#x2F;主函数中，由于第一遍快速排序是对整个数组排序的，因此开始是 $low&#x3D;0,$high&#x3D;count($arr)-1。</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">&#x2F;&#x2F;调用</span><br><span class="line">echo &quot;&lt;pre&gt;&quot;;</span><br><span class="line">$arr &#x3D; [6,2,7,3,8,9];</span><br><span class="line">QuickSort($arr);</span><br><span class="line">print_r($arr);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<h3 id="GOLANG实现"><a href="#GOLANG实现" class="headerlink" title="GOLANG实现"></a>GOLANG实现</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><span class="line">&#x2F;&#x2F;选取数组当中的一个关键字，使得它处于数组某个位置时，左边的值比它小，右边的值比它大，该关键字叫做枢轴</span><br><span class="line">&#x2F;&#x2F;使枢轴记录到位，并返回其所在位置</span><br><span class="line">func Partition(arr []int,low int , hight int) int&#123;</span><br><span class="line">	piovt_value :&#x3D; arr[low]</span><br><span class="line">	for low&lt;hight &#123;</span><br><span class="line">		for low &lt; hight &amp;&amp; arr[hight] &gt; piovt_value&#123;</span><br><span class="line">			hight--</span><br><span class="line">		&#125;</span><br><span class="line">		arr[low],arr[hight] &#x3D; arr[hight],arr[low]</span><br><span class="line">		for low &lt; hight &amp;&amp; arr[low] &lt;  piovt_value&#123;</span><br><span class="line">			low++</span><br><span class="line">		&#125;</span><br><span class="line">		arr[low],arr[hight] &#x3D; arr[hight],arr[low]</span><br><span class="line">	&#125;</span><br><span class="line"></span><br><span class="line">	return low</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func Qsort(arr []int , low int ,hight int)  &#123;</span><br><span class="line">	if low &gt;&#x3D; hight &#123;</span><br><span class="line">		return</span><br><span class="line">	&#125;</span><br><span class="line">	piovt_index :&#x3D; Partition(arr,low,hight)   &#x2F;&#x2F;将$arr[$low...$high]一分为二，算出枢轴值</span><br><span class="line">	Qsort(arr,low,piovt_index-1)    &#x2F;&#x2F;对低子表（$pivot左边的记录）进行递归排序</span><br><span class="line">	Qsort(arr,piovt_index+1,hight)  &#x2F;&#x2F;对高子表（$pivot右边的记录）进行递归排序</span><br><span class="line">&#125;</span><br><span class="line">func QuickSort(arr []int)&#123;</span><br><span class="line">	low :&#x3D;0</span><br><span class="line">	hight :&#x3D; len(arr)-1</span><br><span class="line">	Qsort(arr,low,hight);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">	arr :&#x3D; [...]int&#123;6,3,8,2,9,1&#125;</span><br><span class="line">	slice :&#x3D; arr[:]</span><br><span class="line">	fmt.Println(slice)</span><br><span class="line">	fmt.Println()</span><br><span class="line">	QuickSort(slice)</span><br><span class="line">	fmt.Println(slice)</span><br><span class="line">	</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<h3 id="PHP快速排序，代码简单但性能较低的一种实现"><a href="#PHP快速排序，代码简单但性能较低的一种实现" class="headerlink" title="PHP快速排序，代码简单但性能较低的一种实现"></a>PHP快速排序，代码简单但性能较低的一种实现</h3><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">function quick_sort($arr) &#123;</span><br><span class="line">    &#x2F;&#x2F;先判断是否需要继续进行</span><br><span class="line">    $length &#x3D; count($arr);</span><br><span class="line">    if($length &lt;&#x3D; 1) &#123;</span><br><span class="line">        return $arr;</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F;如果没有返回，说明数组内的元素个数 多余1个，需要排序</span><br><span class="line">    &#x2F;&#x2F;选择一个标尺</span><br><span class="line">    &#x2F;&#x2F;选择第一个元素</span><br><span class="line">    $base_num &#x3D; $arr[0];</span><br><span class="line">    &#x2F;&#x2F;遍历 除了标尺外的所有元素，按照大小关系放入两个数组内</span><br><span class="line">    &#x2F;&#x2F;初始化两个数组</span><br><span class="line">    $left_array &#x3D; array();&#x2F;&#x2F;小于标尺的</span><br><span class="line">    $right_array &#x3D; array();&#x2F;&#x2F;大于标尺的</span><br><span class="line">    for($i&#x3D;1; $i&lt;$length; $i++) &#123;</span><br><span class="line">        if($base_num &gt; $arr[$i]) &#123;</span><br><span class="line">            &#x2F;&#x2F;放入左边数组</span><br><span class="line">            $left_array[] &#x3D; $arr[$i];</span><br><span class="line">        &#125; else &#123;</span><br><span class="line">            &#x2F;&#x2F;放入右边</span><br><span class="line">            $right_array[] &#x3D; $arr[$i];</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    &#x2F;&#x2F;再分别对 左边 和 右边的数组进行相同的排序处理方式</span><br><span class="line">    &#x2F;&#x2F;递归调用这个函数,并记录结果</span><br><span class="line">    $left_array &#x3D; quick_sort($left_array);</span><br><span class="line">    $right_array &#x3D; quick_sort($right_array);</span><br><span class="line">    &#x2F;&#x2F;合并左边 标尺 右边</span><br><span class="line">    return array_merge($left_array, array($base_num), $right_array);</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-
-
-
-
-<p>参考文档</p>
-<p> <a target="_blank" rel="noopener" href="https://blog.csdn.net/baidu_30000217/article/details/53311840">PHP实现排序算法—-快速排序（Quick Sort）、快排 - CSDN博客</a></p>
-<p> <a target="_blank" rel="noopener" href="https://www.cnblogs.com/firstForEver/p/5155393.html">快速排序的php实现 - 根号五 - 博客园</a></p>
-<p> 大话数据结构</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/08/06/hello-world/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Nolan Chic">
-      <meta itemprop="description" content="Action speak louder than words.">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Nolan's Notes">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2017/08/06/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-08-06 15:08:00" itemprop="dateCreated datePublished" datetime="2017-08-06T15:08:00+08:00">2017-08-06</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-09-16 18:47:34" itemprop="dateModified" datetime="2020-09-16T18:47:34+08:00">2020-09-16</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/deployment.html">Deployment</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/03/12/Linux/Mac%20find%20%E5%8E%BB%E9%99%A4%20%E2%80%9CPermission%20denied%E2%80%9D%20%E4%BF%A1%E6%81%AF/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Nolan Chic">
-      <meta itemprop="description" content="Action speak louder than words.">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Nolan's Notes">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2017/03/12/Linux/Mac%20find%20%E5%8E%BB%E9%99%A4%20%E2%80%9CPermission%20denied%E2%80%9D%20%E4%BF%A1%E6%81%AF/" class="post-title-link" itemprop="url">Mac find 去除 “Permission denied” 信息</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-03-12 10:00:04" itemprop="dateCreated datePublished" datetime="2017-03-12T10:00:04+08:00">2017-03-12</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-09-16 18:47:34" itemprop="dateModified" datetime="2020-09-16T18:47:34+08:00">2020-09-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="Mac-find-去除-“Permission-denied”-信息"><a href="#Mac-find-去除-“Permission-denied”-信息" class="headerlink" title="Mac find 去除 “Permission denied” 信息"></a>Mac find 去除 “Permission denied” 信息</h1><p>Mac 下查找文件，最简单的方法应该是</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mdfind filename</span><br></pre></td></tr></table></figure>
-
-<p>等同于</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">mdfind -name filename</span><br></pre></td></tr></table></figure>
-
-<p>不过，mdfind 貌似无法查找隐藏文件，比如，你要查找.zshrc，那么，用mdfind .zshrc 将一无所获。</p>
-<p>此时，我们还是需要用回 find 命令。但如果我们用</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">find &#x2F; -name .zshrc</span><br></pre></td></tr></table></figure>
-
-<p>我们将发行满屏的permission denied，如</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">... ...</span><br><span class="line">find: &#x2F;private&#x2F;var&#x2F;spool&#x2F;postfix&#x2F;hold: Permission denied</span><br><span class="line">find: &#x2F;private&#x2F;var&#x2F;spool&#x2F;postfix&#x2F;incoming: Permission denied</span><br><span class="line">find: &#x2F;private&#x2F;var&#x2F;spool&#x2F;postfix&#x2F;maildrop: Permission denied</span><br><span class="line">... ...</span><br></pre></td></tr></table></figure>
-
-<p>这不是我们想看到的结果，如何阻止这些  <font color=#c7254e background-color=#f9f2f4 size=4> permission denied </font>信息呢。</p>
-<p>主要有以下三种方法：</p>
-<ul>
-<li>用管理员权限执行 <font color=#c7254e background-color=#f9f2f4 size=4> find </font></li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">sudo find &#x2F; -name &quot;keyword&quot; -print</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li>丢弃所有错误输出</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">find &#x2F; -name &quot;keyword&quot; -print 2&gt;&#x2F;dev&#x2F;null</span><br></pre></td></tr></table></figure>
-<ul>
-<li>过滤 <font color=#c7254e background-color=#f9f2f4 size=4> permission denied </font> 信息</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">find &#x2F; -name &quot;keyword&quot; -print 2&gt;&amp;1 | fgrep -v &quot;Permission denied&quot;</span><br></pre></td></tr></table></figure>
-
-
-
-
-
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/02/16/Linux/iptables%E5%B8%B8%E7%94%A8%E6%A8%A1%E5%9D%97%E4%BB%8B%E7%BB%8D/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Nolan Chic">
-      <meta itemprop="description" content="Action speak louder than words.">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Nolan's Notes">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2017/02/16/Linux/iptables%E5%B8%B8%E7%94%A8%E6%A8%A1%E5%9D%97%E4%BB%8B%E7%BB%8D/" class="post-title-link" itemprop="url">iptables常用模块介绍</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-16 09:59:47" itemprop="dateCreated datePublished" datetime="2017-02-16T09:59:47+08:00">2017-02-16</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-09-16 18:47:34" itemprop="dateModified" datetime="2020-09-16T18:47:34+08:00">2020-09-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Linux/" itemprop="url" rel="index"><span itemprop="name">Linux</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="iptables常用模块介绍"><a href="#iptables常用模块介绍" class="headerlink" title="iptables常用模块介绍"></a>iptables常用模块介绍</h1><h2 id="connlimit"><a href="#connlimit" class="headerlink" title="connlimit"></a>connlimit</h2><p>connlimit模块允许你限制每个客户端ip的并发连接数，即每个ip同时连接到一个服务器个数。</p>
-<p>connlimit模块主要可以限制内网用户的网络使用，对服务器而言则可以限制每个ip发起的连接数。</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">--connlimit-above n 限制为多少个</span><br><span class="line">--connlimit-mask n 这组主机的掩码,默认是connlimit-mask 32 ,即每ip.</span><br></pre></td></tr></table></figure>
-
-<p>＃限制除了172.16.130.40此ip外,其他ip通过TCP访问444端口并发数为30</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">iptables -I INPUT -p tcp --dport 444 -m connlimit --connlimit-above 30 -j REJECT</span><br><span class="line"></span><br><span class="line">iptables -I INPUT -s 172.16.130.40 -p tcp --dport 444  -j ACCEPT</span><br></pre></td></tr></table></figure>
-
-<p>＃允许每个客户机同时两个telnet连接</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">iptables -A INPUT -p tcp --syn --dport 23 -m connlimit --connlimit-above 2 -j REJECT</span><br><span class="line">或</span><br><span class="line">iptables -A INPUT -p tcp --syn --dport 23 -m connlimit ! --connlimit-above 2 -j ACCEPT</span><br></pre></td></tr></table></figure>
-
-<p>＃只允许每组C类ip同时16个http连接</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -p tcp --syn --dport 80 -m connlimit --connlimit-above 16 --connlimit-mask 24 -j REJECT</span><br></pre></td></tr></table></figure>
-
-<p>＃只允许每个ip同时5个80端口转发,超过的丢弃:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -I FORWARD -p tcp --syn --dport 80 -m connlimit --connlimit-above 5 -j DROP</span><br></pre></td></tr></table></figure>
-
-<p>＃只允许每组C类ip同时10个80端口转发:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">iptables -I FORWARD -p tcp --syn --dport 80 -m connlimit --connlimit-above 10 --connlimit-mask 24 -j DROP</span><br></pre></td></tr></table></figure>
-
-<p>＃为了防止DOS太多连接进来,那么可以允许最多15个初始连接,超过的丢弃.</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">iptables -A INPUT -s 192.186.1.0&#x2F;24 -p tcp --syn -m connlimit --connlimit-above 15 -j DROP</span><br><span class="line"></span><br><span class="line">iptables -A INPUT -s 192.186.1.0&#x2F;24 -p tcp -m state --state ESTABLISHED,RELATED -j ACCEP</span><br></pre></td></tr></table></figure>
-
-
-
-<p>本文地址: <a target="_blank" rel="noopener" href="http://www.cszhi.com/20120510/iptables-modules-connlimit.html">http://www.cszhi.com/20120510/iptables-modules-connlimit.html</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/02/07/NGINX/NGINX%E9%98%B2%E6%AD%A2CC%E6%94%BB%E5%87%BB/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Nolan Chic">
-      <meta itemprop="description" content="Action speak louder than words.">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Nolan's Notes">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2017/02/07/NGINX/NGINX%E9%98%B2%E6%AD%A2CC%E6%94%BB%E5%87%BB/" class="post-title-link" itemprop="url">NGINX防止CC攻击</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-02-07 19:45:40" itemprop="dateCreated datePublished" datetime="2017-02-07T19:45:40+08:00">2017-02-07</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-09-16 18:47:34" itemprop="dateModified" datetime="2020-09-16T18:47:34+08:00">2020-09-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/NGINX/" itemprop="url" rel="index"><span itemprop="name">NGINX</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="NGINX防止CC攻击"><a href="#NGINX防止CC攻击" class="headerlink" title="NGINX防止CC攻击"></a>NGINX防止CC攻击</h1><p>1.geo指令定义了一个白名单</p>
-<p>2.使用map指令映射搜索引擎客户端的ip为空串，如果不是搜索引擎就显示本身真实的ip，这样搜索引擎ip就不能存到limit_req_zone内存session中，所以不会限制搜索引擎的ip访问</p>
-<p>3.ngx_http_limit_req_module模块</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">limit_req_zone $binary_remote_addr zone&#x3D;perip:10m rate&#x3D;1r&#x2F;s;</span><br><span class="line">limit_req_zone $server_name zone&#x3D;perserver:10m rate&#x3D;10r&#x2F;s;</span><br><span class="line"></span><br><span class="line">server &#123;</span><br><span class="line">    ...</span><br><span class="line">    limit_req zone&#x3D;perip burst&#x3D;5 nodelay;</span><br><span class="line">    limit_req zone&#x3D;perserver burst&#x3D;10;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>nginx.conf文件</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line">http&#123;</span><br><span class="line">    #定义白名单 limited</span><br><span class="line">    geo $limited&#123;</span><br><span class="line">        default 1;</span><br><span class="line">        172.16.130.40&#x2F;32 0;</span><br><span class="line">    &#125;</span><br><span class="line">    #自定义$limit</span><br><span class="line">    map $limited $limit &#123;</span><br><span class="line">        1 $binary_remote_addr;</span><br><span class="line">        0 &quot;&quot;;</span><br><span class="line">    &#125;</span><br><span class="line">     map $limited $limit_server_name &#123;</span><br><span class="line">        1 $server_name;</span><br><span class="line">        0 &quot;&quot;;</span><br><span class="line">    &#125;</span><br><span class="line">      limit_req_zone $limit zone&#x3D;perip:10m rate&#x3D;1r&#x2F;s;</span><br><span class="line">      limit_req_zone $limit_server_name zone&#x3D;perserver:10m rate&#x3D;1r&#x2F;s;</span><br><span class="line">      include ssl.conf;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-<p>ssl.conf文件</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><span class="line">server &#123;</span><br><span class="line">    server_name 127.0.0.1;</span><br><span class="line">    listen 444;</span><br><span class="line">    listen [::]:444;</span><br><span class="line">    ssl on;</span><br><span class="line">    ssl_certificate &#x2F;Data&#x2F;apps&#x2F;nginx&#x2F;conf&#x2F;33iq.crt;</span><br><span class="line">    ssl_certificate_key &#x2F;Data&#x2F;apps&#x2F;nginx&#x2F;conf&#x2F;33iq_nopass.key;</span><br><span class="line">    ssl_protocols TLSv1 TLSv1.1 TLSv1.2;</span><br><span class="line">    ssl_ciphers ECDHE-RSA-AES256-SHA384:AES256-SHA256:!RC4:HIGH:!MD5:!aNULL:!eNULL:!NULL:!DH:!EDH:!AESGCM;</span><br><span class="line">    ssl_prefer_server_ciphers on;</span><br><span class="line">    ssl_session_cache shared:SSL:10m;</span><br><span class="line">    ssl_session_timeout 10m;</span><br><span class="line">    client_max_body_size 512M;</span><br><span class="line">    root   &#x2F;Data&#x2F;apps&#x2F;wwwroot&#x2F;firewall&#x2F;apps&#x2F;admin;</span><br><span class="line">    index  index.html index.htm index.php;</span><br><span class="line">    location &#x2F; &#123;</span><br><span class="line">        limit_req zone&#x3D;perip burst&#x3D;5 nodelay;</span><br><span class="line">        limit_req zone&#x3D;perserver burst&#x3D;10;</span><br><span class="line">        index  index.htm index.html index.php;</span><br><span class="line">        if (!-e $request_filename)&#123;</span><br><span class="line">            rewrite ^(.*)$ &#x2F;index.php last;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    location ~ \.php(.*)$ &#123;</span><br><span class="line">        fastcgi_pass   127.0.0.1:9000;</span><br><span class="line">        fastcgi_index  index.php;</span><br><span class="line">        fastcgi_param  SCRIPT_FILENAME  $document_root$fastcgi_script_name;</span><br><span class="line">        fastcgi_param  PATH_INFO  $fastcgi_path_info;</span><br><span class="line">        include        fastcgi_params;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<p><a target="_blank" rel="noopener" href="https://blog.csdn.net/u012566181/article/details/49968283">https://blog.csdn.net/u012566181/article/details/49968283</a></p>
-<p><a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_limit_req_module.html">http://nginx.org/en/docs/http/ngx_http_limit_req_module.html</a></p>
-<p><a target="_blank" rel="noopener" href="http://nginx.org/en/docs/http/ngx_http_limit_conn_module.html">http://nginx.org/en/docs/http/ngx_http_limit_conn_module.html</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2016/06/18/PHP/PHP%E7%9A%84%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Nolan Chic">
-      <meta itemprop="description" content="Action speak louder than words.">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Nolan's Notes">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2016/06/18/PHP/PHP%E7%9A%84%E5%9E%83%E5%9C%BE%E5%9B%9E%E6%94%B6%E6%9C%BA%E5%88%B6/" class="post-title-link" itemprop="url">PHP的垃圾回收机制</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2016-06-18 10:53:00" itemprop="dateCreated datePublished" datetime="2016-06-18T10:53:00+08:00">2016-06-18</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-09-16 18:45:11" itemprop="dateModified" datetime="2020-09-16T18:45:11+08:00">2020-09-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/PHP/" itemprop="url" rel="index"><span itemprop="name">PHP</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="PHP的垃圾回收机制"><a href="#PHP的垃圾回收机制" class="headerlink" title="PHP的垃圾回收机制"></a>PHP的垃圾回收机制</h1><h3 id="前言"><a href="#前言" class="headerlink" title="前言"></a>前言</h3><p>平时听到大神提到的GC ,就是垃圾回收器,全称Garbage Collection.<br>在介绍这个新的GC之前，读者必须先了解PHP中变量的内部存储相关知识，请先阅读<a target="_blank" rel="noopener" href="https://blog.csdn.net/phpkernel/article/details/5732784">变量的内部存储：引用和计数</a></p>
-<h3 id="变量的结构与类型"><a href="#变量的结构与类型" class="headerlink" title="变量的结构与类型"></a>变量的结构与类型</h3><p>PHP在内核中是通过zval这个结构体来存储变量的，所以写扩展的时候当然也是一样。<br>在Zend/zend.h文件中找到了其定义：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">struct _zval_struct &#123;</span><br><span class="line">    zvalue_value value; &#x2F;* 变量的值 *&#x2F;</span><br><span class="line">    zend_uint refcount__gc;</span><br><span class="line">    zend_uchar type;    &#x2F;* 变量当前的数据类型 *&#x2F;</span><br><span class="line">    zend_uchar is_ref__gc;</span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>快速理解:为方便起见可以直接把zval结构体理解成一个由</p>
-</blockquote>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">value</span><br><span class="line">type</span><br><span class="line">refcount__gc</span><br><span class="line">is_ref__gc</span><br><span class="line"></span><br></pre></td></tr></table></figure>
-
-<blockquote>
-<p>组成的对象就好了，*__gc是管理内存相关的时候会用到的,这里可以先不管。</p>
-</blockquote>
-<h3 id="什么算垃圾"><a href="#什么算垃圾" class="headerlink" title="什么算垃圾"></a>什么算垃圾</h3><p> 首先我们需要定义一下“垃圾”的概念，新的GC负责清理的垃圾是指变量的容器zval还存在，但是又没有任何变量名指向此zval。因此GC判断是否为垃圾的一个重要标准是有没有变量名指向变量容器zval。</p>
-<p>  假设我们有一段PHP代码，使用了一个临时变量$tmp存储了一个字符串，在处理完字符串之后，就不需要这个$tmp变量了，$tmp变量对于我们来说可以算是一个“垃圾”了，但是对于GC来说，$tmp其实并不是一个垃圾，$tmp变量对我们没有意义，但是这个变量实际还存在，$tmp符号依然指向它所对应的zval，GC会认为PHP代码中可能还会使用到此变量，所以不会将其定义为垃圾。</p>
-<p>  那么如果我们在PHP代码中使用完$tmp后，调用unset删除这个变量，那么$tmp是不是就成为一个垃圾了呢。很可惜，GC仍然不认为$tmp是一个垃圾，因为$tmp在unset之后，refcount减少1变成了0(这里假设没有别的变量和$tmp指向相同的zval),这个时候GC会直接将$tmp对应的zval的内存空间释放，$tmp和其对应的zval就根本不存在了。此时的$tmp也不是新的GC所要对付的那种“垃圾”。那么新的GC究竟要对付什么样的垃圾呢，下面我们将生产一个这样的垃圾。  </p>
-<h3 id="顽固垃圾的产生过程"><a href="#顽固垃圾的产生过程" class="headerlink" title="顽固垃圾的产生过程"></a>顽固垃圾的产生过程</h3><p> 如果读者已经阅读了变量内部存储相关的内容，想必对refcount和isref这些变量内部的信息有了一定的了解。这里我们将结合手册中的一个例子来介绍垃圾的产生过程：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">$a &#x3D; &quot;new string&quot;;</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
-<p>在这么简单的一个代码中，$a变量内部存储信息为a: (refcount=1, is_ref=0)=’new string’<br>当把$a赋值给另外一个变量的时候，$a对应的zval的refcount会加1</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">$a &#x3D; &quot;new string&quot;;</span><br><span class="line"></span><br><span class="line">$b &#x3D; $a;</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
-
-<p>此时$a和$b变量对应的内部存储信息为</p>
-<p>a,b: (refcount=2, is_ref=0)=’new string’</p>
-<p>当我们用unset删除$b变量的时候，$b对应的zval的refcount会减少1</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">$a &#x3D; &quot;new string&quot;; &#x2F;&#x2F;a: (refcount&#x3D;1, is_ref&#x3D;0)&#x3D;&#39;new string&#39;</span><br><span class="line"></span><br><span class="line">$b &#x3D; $a;                 &#x2F;&#x2F;a,b: (refcount&#x3D;2, is_ref&#x3D;0)&#x3D;&#39;new string&#39;</span><br><span class="line"></span><br><span class="line">unset($b);              &#x2F;&#x2F;a: (refcount&#x3D;1, is_ref&#x3D;0)&#x3D;&#39;new string&#39;</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
-
-<p>对于普通的变量来说，这一切似乎很正常，但是在复合类型变量（数组和对象）中，会发生比较有意思的事情：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">$a &#x3D; array(&#39;meaning&#39; &#x3D;&gt; &#39;life&#39;, &#39;number&#39; &#x3D;&gt; 42);</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
-
-
-<p>a的内部存储信息为:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">a: (refcount&#x3D;1, is_ref&#x3D;0)&#x3D;array (</span><br><span class="line">   &#39;meaning&#39; &#x3D;&gt; (refcount&#x3D;1, is_ref&#x3D;0)&#x3D;&#39;life&#39;,</span><br><span class="line">   &#39;number&#39; &#x3D;&gt; (refcount&#x3D;1, is_ref&#x3D;0)&#x3D;42</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-
-<p>数组变量本身($a)在引擎内部实际上是一个哈希表，这张表中有两个zval项 meaning和number，<br>所以实际上那一行代码中一共生成了3个zval,这3个zval都遵循变量的引用和计数原则，用图来表示:<br><img src="https://note.youdao.com/yws/public/resource/5978c86577f2382879467cc51562a46c/xmlnote/50B46E979DC140F69A194BC68B2540CB/6159"></p>
-<p> 下面在$a中添加一个元素，并将现有的一个元素的值赋给新的元素:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">$a &#x3D; array(&#39;meaning&#39; &#x3D;&gt; &#39;life&#39;, &#39;number&#39; &#x3D;&gt; 42);</span><br><span class="line"></span><br><span class="line">$a[&#39;life&#39;] &#x3D; $a[&#39;meaning&#39;];</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
-
-<p>那么$a的内部存储为:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">a: (refcount&#x3D;1, is_ref&#x3D;0)&#x3D;array (</span><br><span class="line">   &#39;meaning&#39; &#x3D;&gt; (refcount&#x3D;2, is_ref&#x3D;0)&#x3D;&#39;life&#39;,</span><br><span class="line">   &#39;number&#39; &#x3D;&gt; (refcount&#x3D;1, is_ref&#x3D;0)&#x3D;42,</span><br><span class="line">   &#39;life&#39; &#x3D;&gt; (refcount&#x3D;2, is_ref&#x3D;0)&#x3D;&#39;life&#39;</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-<p>其中的meaning元素和life元素之指向同一个zval的：<br><img src="https://note.youdao.com/yws/public/resource/5978c86577f2382879467cc51562a46c/xmlnote/DA4F603A6F774B74A73EB19995D9154A/6161"></p>
-<p>现在，如果我们试一下，将数组的引用赋值给数组中的一个元素，有意思的事情就发生了：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">$a &#x3D; array(&#39;one&#39;);</span><br><span class="line"></span><br><span class="line">$a[] &#x3D; &amp;$a;</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
-
-<p>这样$a数组就有两个元素，一个索引为0，值为字符one,另外一个索引为1，为$a自身的引用，内部存储如下:</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">a: (refcount&#x3D;2, is_ref&#x3D;1)&#x3D;array (</span><br><span class="line">   0 &#x3D;&gt; (refcount&#x3D;1, is_ref&#x3D;0)&#x3D;&#39;one&#39;,</span><br><span class="line">   1 &#x3D;&gt; (refcount&#x3D;2, is_ref&#x3D;1)&#x3D;…</span><br><span class="line">)</span><br></pre></td></tr></table></figure>
-
-<p>“…”表示1指向a自身，是一个环形引用：<br><img src="https://note.youdao.com/yws/public/resource/5978c86577f2382879467cc51562a46c/xmlnote/A07BDA83DE984B0BA6111B02ECA175FD/6163"></p>
-<p>这个时候我们对$a进行unset,那么$a会从符号表中删除，同时$a指向的zval的refcount减少1</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line"></span><br><span class="line">$a &#x3D; array(&#39;one&#39;);</span><br><span class="line"></span><br><span class="line">$a[] &#x3D; &amp;$a;</span><br><span class="line"></span><br><span class="line">unset($a);</span><br><span class="line"></span><br><span class="line">?&gt;</span><br></pre></td></tr></table></figure>
-
-<p>那么问题也就产生了，$a已经不在符号表中了，用户无法再访问此变量，但是$a之前指向的zval的refcount变为1而不是0，因此不能被回收，这样产生了内存泄露：</p>
-<p><img src="https://note.youdao.com/yws/public/resource/5978c86577f2382879467cc51562a46c/xmlnote/43D6D4974BFD4D6F9C38BEE0F1BF90F5/6165"></p>
-<p>这样，这么一个zval就成为了一个真是意义的垃圾了，新的GC要做的工作就是清理这种垃圾。</p>
-<h3 id="为解决这种垃圾，PHP5-3以后的GC"><a href="#为解决这种垃圾，PHP5-3以后的GC" class="headerlink" title="为解决这种垃圾，PHP5.3以后的GC"></a>为解决这种垃圾，PHP5.3以后的GC</h3><p> 在PHP5.3版本中，使用了专门GC机制清理垃圾，在之前的版本中是没有专门的GC，那么垃圾产生的时候，没有办法清理，内存就白白浪费掉了。在PHP5.3源代码中多了以下文件:{PHPSRC}/Zend/zend_gc.h {PHPSRC}/Zend/zend_gc.c, 这里就是新的GC的实现。</p>
-<h3 id="GC算法"><a href="#GC算法" class="headerlink" title="GC算法"></a>GC算法</h3><p> 在较新的PHP手册中有简单的介绍新的GC使用的垃圾清理算法，这个算法名为 Concurrent Cycle Collection in Reference Counted Systems ， 这里不详细介绍此算法，根据手册中的内容来先简单的介绍一下思路：</p>
-<h4 id="判断处理过程"><a href="#判断处理过程" class="headerlink" title="判断处理过程"></a>判断处理过程</h4><ul>
-<li><p>1：如果一个zval的refcount增加，那么此zval还在使用，不属于垃圾</p>
-</li>
-<li><p>2：如果一个zval的refcount减少到0， 那么zval可以被释放掉，不属于垃圾</p>
-</li>
-<li><p>3：如果一个zval的refcount减少之后大于0，那么此zval还不能被释放，此zval可能成为一个垃圾</p>
-</li>
-</ul>
-<p>只有在准则3下，GC才会把zval收集起来，然后通过新的算法来判断此zval是否为垃圾。那么如何判断这么一个变量是否为真正的垃圾呢？</p>
-<p>简单的说，就是对此zval中的每个元素进行一次refcount减1操作，操作完成之后，如果zval的refcount=0，那么这个zval就是一个垃圾。首先引用手册中的一张图:</p>
-<p><img src="https://note.youdao.com/yws/public/resource/621137a5f14579fa1d790a0df8eb2974/xmlnote/WEBRESOURCEc481866e828f6f8e1bc7e377bd4bbf4e/6171"></p>
-<p>A：为了避免每次变量的refcount减少的时候都调用GC的算法进行垃圾判断，此算法会先把所有前面准则3情况下的zval节点放入一个节点(root)缓冲区(root buffer)，并且将这些zval节点标记成紫色，同时算法必须确保每一个zval节点在缓冲区中之出现一次。当缓冲区被节点塞满的时候，GC才开始开始对缓冲区中的zval节点进行垃圾判断。</p>
-<p>B：当缓冲区满了之后，算法以深度优先对每一个节点所包含的zval进行减1操作，为了确保不会对同一个zval的refcount重复执行减1操作，一旦zval的refcount减1之后会将zval标记成灰色。需要强调的是，这个步骤中，起初节点zval本身不做减1操作，但是如果节点zval中包含的zval又指向了节点zval（环形引用），那么这个时候需要对节点zval进行减1操作。</p>
-<p>C：算法再次以深度优先判断每一个节点包含的zval的值，如果zval的refcount等于0，那么将其标记成白色(代表垃圾)，如果zval的refcount大于0，那么将对此zval以及其包含的zval进行refcount加1操作，这个是对非垃圾的还原操作，同时将这些zval的颜色变成黑色（zval的默认颜色属性）</p>
-<p>D：遍历zval节点，将C中标记成白色的节点zval释放掉。</p>
-<p>来个白话文版的：<br>例如：</p>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">&lt;?php</span><br><span class="line">    $a &#x3D; [&#39;one&#39;]; --- zval_a（将$a对应的zval，命名为zval_a）</span><br><span class="line">    $a[] &#x3D; &amp;$a; --- step1</span><br><span class="line">    unset($a);  --- step2</span><br><span class="line">    </span><br></pre></td></tr></table></figure>
-
-<p>为进行unset之前(step1)，进行算法计算，对这个数组中的所有元素（索引0和索引1）的zval的refcount进行减1操作，由于索引1对应的就是zval_a，所以这个时候zval_a的refcount应该变成了1，这样说明zval_a不是一个垃圾不进行回收。</p>
-<p>当执行unset的时候(step2)，进行算法计算，由于环形引用，上文得出会有垃圾的结构体，zval_a的refcount是1(zval_a中的索引1指向zval_a)，用算法对数组中的所有元素（索引0和索引1）的zval的refcount进行减1操作，这样zval_a的refcount就会变成0，于是就认为zval_a是一个需要回收的垃圾。</p>
-<p>算法总的套路:<strong>对于一个包含环形引用的数组，对数组中包含的每个元素的zval进行减1操作，之后如果发现数组自身的zval的refcount变成了0，那么可以判断这个数组是一个垃圾。</strong></p>
-<h3 id="算法优化配置"><a href="#算法优化配置" class="headerlink" title="算法优化配置"></a>算法优化配置</h3><p>可能会发现，每次都进行这样的操作好像会影响性能，是的，php做事情套路都是走批量的原则。</p>
-<p>申请内存也是申请一大块，仅使用当前的一小部分剩下的等下回再用，避免多次申请。</p>
-<p>这个gc算法也是这样，会有一个缓冲区的概念，等缓冲区满了才会一次性去给清掉。</p>
-<ul>
-<li>开关配置</li>
-</ul>
-<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"></span><br><span class="line">php.ini中设置 zend.enable_gc 项来开启或则关闭GC。</span><br></pre></td></tr></table></figure>
-
-<ul>
-<li><p>缓冲区配置<br>缓冲区默认可以放10,000个节点，当缓冲区满了才会清理。可以通过修改Zend/zend_gc.c中的<code>GC_ROOT_BUFFER_MAX_ENTRIES</code> 来改变这个数值，需要重新编译链接PHP</p>
-</li>
-<li><p>关键函数</p>
-</li>
-</ul>
-<p><code>gc_enable()</code> : 开启GC</p>
-<p><code>gc_disable()</code> : 关闭GC</p>
-<p><code>gc_collect_cycles()</code> : 在节点缓冲区未满的情况下强制执行垃圾分析算法</p>
-<h3 id="涉及到垃圾回收的知识点"><a href="#涉及到垃圾回收的知识点" class="headerlink" title="涉及到垃圾回收的知识点"></a>涉及到垃圾回收的知识点</h3><ul>
-<li>unset函数</li>
-</ul>
-<p>unset只是断开一个变量到一块内存区域的连接，同时将该内存区域的引用计数-1；内存是否回收主要还是看refcount是否到0了，以及gc算法判断。</p>
-<ul>
-<li>= null 操作</li>
-</ul>
-<p>a=null是直接将a 指向的数据结构置空，同时将其引用计数归0。</p>
-<ul>
-<li>脚本执行结束</li>
-</ul>
-<p>脚本执行结束，该脚本中使用的所有内存都会被释放，不论是否有引用环。</p>
-<h5 id="参考文档"><a href="#参考文档" class="headerlink" title="参考文档"></a>参考文档</h5><p><a target="_blank" rel="noopener" href="http://www.php.net/manual/en/features.gc.php">参考文档</a><br><a target="_blank" rel="noopener" href="https://www.cnblogs.com/orlion/p/5350844.html">参考文档</a><br><a target="_blank" rel="noopener" href="https://blog.csdn.net/u011957758/article/details/76864400">参考文档</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
+  <nav class="pagination">
+    <span class="page-number current">1</span><a class="page-number" href="/page/2/">2</a><a class="extend next" rel="next" href="/page/2/"><i class="fa fa-angle-right" aria-label="Next page"></i></a>
+  </nav>
 
 
 
@@ -1283,13 +1493,13 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">10</span>
+          <span class="site-state-item-count">18</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
       <div class="site-state-item site-state-categories">
             <a href="/categories/">
-        <span class="site-state-item-count">9</span>
+        <span class="site-state-item-count">10</span>
         <span class="site-state-item-name">categories</span></a>
       </div>
       <div class="site-state-item site-state-tags">
