@@ -178,7 +178,7 @@
                   <i class="far fa-calendar-check"></i>
                 </span>
                 <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-11-26 00:39:10" itemprop="dateModified" datetime="2020-11-26T00:39:10+08:00">2020-11-26</time>
+                <time title="Modified: 2020-11-28 16:27:03" itemprop="dateModified" datetime="2020-11-28T16:27:03+08:00">2020-11-28</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -201,7 +201,8 @@
     <div class="post-body" itemprop="articleBody">
 
       
-          <h1 id="Redis-引出的问题"><a href="#Redis-引出的问题" class="headerlink" title="Redis 引出的问题"></a>Redis 引出的问题</h1><p>为了保证数据的可靠性，Redis 需要在磁盘上读写 AOF 和 RDB，但在高并发场景里，这就会直接带来两个新问题：</p>
+          <h1 id="Redis-引出的问题"><a href="#Redis-引出的问题" class="headerlink" title="Redis 引出的问题"></a>Redis 引出的问题</h1><p><strong>学习蒋德钧老师的《Redis核心技术与实战》，这系列文章会根据老师的内容进行精简提炼整理并添加自我的思考等等，与原文有重叠的部分，如侵权请于主页联系本人必删除</strong></p>
+<p>为了保证数据的可靠性，Redis 需要在磁盘上读写 AOF 和 RDB，但在高并发场景里，这就会直接带来两个新问题：</p>
 <ul>
 <li>一个是写 AOF 和 RDB 会造成 Redis 性能抖动。(AOF，将Redis的操作日志以追加的方式写入文件。 RDB，将Redis在内存中的数据库记录定时dump到磁盘上的RDB持久化。)</li>
 <li>另一个是 Redis 集群数据同步和实例恢复时，读 RDB 比较慢，限制了同步和恢复速度。</li>
