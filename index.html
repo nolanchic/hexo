@@ -147,6 +147,382 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/20/11%E3%80%81%E7%BC%93%E5%AD%98%E9%97%AE%E9%A2%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/07/20/11%E3%80%81%E7%BC%93%E5%AD%98%E9%97%AE%E9%A2%98/" class="post-title-link" itemprop="url">11、缓存问题</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-07-20 22:14:00" itemprop="dateCreated datePublished" datetime="2020-07-20T22:14:00+08:00">2020-07-20</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-26 22:15:35" itemprop="dateModified" datetime="2020-11-26T22:15:35+08:00">2020-11-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="缓存雪崩、缓存击穿、缓存穿透"><a href="#缓存雪崩、缓存击穿、缓存穿透" class="headerlink" title="缓存雪崩、缓存击穿、缓存穿透"></a>缓存雪崩、缓存击穿、缓存穿透</h2><p><img src="https://i.loli.net/2020/11/26/ekxstGHaiOoVcTU.png" alt="image.png"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/16/10%E3%80%81%E6%B7%98%E6%B1%B0%E7%AD%96%E7%95%A5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/07/16/10%E3%80%81%E6%B7%98%E6%B1%B0%E7%AD%96%E7%95%A5/" class="post-title-link" itemprop="url">10、淘汰策略</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-07-16 18:32:00" itemprop="dateCreated datePublished" datetime="2020-07-16T18:32:00+08:00">2020-07-16</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-26 16:23:26" itemprop="dateModified" datetime="2020-11-26T16:23:26+08:00">2020-11-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="Redis-缓存有哪些淘汰策略？"><a href="#Redis-缓存有哪些淘汰策略？" class="headerlink" title="Redis 缓存有哪些淘汰策略？"></a>Redis 缓存有哪些淘汰策略？</h2><h4 id="内存淘汰策略"><a href="#内存淘汰策略" class="headerlink" title="内存淘汰策略"></a>内存淘汰策略</h4><p>Redis 4.0 之前一共实现了 6 种内存淘汰策略，在 4.0 之后，又增加了 2 种策略。我们可以按照是否会进行数据淘汰把它们分成两类：</p>
+<ul>
+<li>不进行数据淘汰的策略，只有 noeviction 这一种</li>
+<li>会进行淘汰的 7 种其他策略。</li>
+</ul>
+<p>会进行淘汰的 7 种策略，我们可以再进一步根据淘汰候选数据集的范围把它们分成两类：</p>
+<ul>
+<li><p>在设置了过期时间的数据中进行淘汰，包括 volatile-random、volatile-ttl、volatile-lru、volatile-lfu（Redis 4.0 后新增）四种。</p>
+</li>
+<li><p>在所有数据范围内进行淘汰，包括 allkeys-lru、allkeys-random、allkeys-lfu（Redis 4.0 后新增）三种。</p>
+</li>
+</ul>
+<p><img src="https://i.loli.net/2020/11/26/6nP8aWmXLAiUguw.png" alt="image.png"></p>
+<h4 id="LRU-算法"><a href="#LRU-算法" class="headerlink" title="LRU 算法"></a>LRU 算法</h4><p>LRU 算法的全称是 Least Recently Used</p>
+<p>从名字上就可以看出，这是按照最近最少使用的原则来筛选数据，最不常用的数据会被筛选出来，而最近频繁使用的数据会留在缓存中。</p>
+<p>那具体是怎么筛选的呢？<br>LRU 会把所有的数据组织成一个链表，链表的头和尾分别表示 MRU 端和 LRU 端，分别代表最近最常使用的数据和最近最不常用的数据。我们看一个例子。</p>
+<p><img src="https://i.loli.net/2020/11/26/OmWZyEb2wtYu1gr.png" alt="image.png"></p>
+<p>LRU 算法在实际实现时，需要用链表管理所有的缓存数据，这会带来额外的空间开销。而且，当有数据被访问时，需要在链表上把该数据移动到 MRU 端，如果有大量数据被访问，就会带来很多链表移动操作，会很耗时，进而会降低 Redis 缓存性能。</p>
+<p>所以，在 Redis 中，LRU 算法被做了简化，以减轻数据淘汰对缓存性能的影响。具体来说，Redis 默认会记录每个数据的最近一次访问的时间戳（由键值对数据结构 RedisObject 中的 lru 字段记录）。然后，Redis 在决定淘汰的数据时，第一次会随机选出 N 个数据，把它们作为一个候选集合。接下来，Redis 会比较这 N 个数据的 lru 字段，把 lru 字段值最小的数据从缓存中淘汰出去。</p>
+<p>Redis 提供了一个配置参数 maxmemory-samples，这个参数就是 Redis 选出的数据个数 N。例如，我们执行如下命令，可以让 Redis 选出 100 个数据作为候选数据集：</p>
+<blockquote>
+<p>CONFIG SET maxmemory-samples 100</p>
+</blockquote>
+<p>当需要再次淘汰数据时，Redis 需要挑选数据进入第一次淘汰时创建的候选集合。这儿的挑选标准是：能进入候选集合的数据的 lru 字段值必须小于候选集合中最小的 lru 值。当有新数据进入候选数据集后，如果候选数据集中的数据个数达到了 maxmemory-samples，Redis 就把候选数据集中 lru 字段值最小的数据淘汰出去。</p>
+<p>这样一来，Redis 缓存不用为所有的数据维护一个大链表，也不用在每次数据访问时都移动链表项，提升了缓存的性能。</p>
+<ul>
+<li><p>优先使用 allkeys-lru 策略。这样，可以充分利用 LRU 这一经典缓存算法的优势，把最近最常访问的数据留在缓存中，提升应用的访问性能。如果你的业务数据中有明显的冷热数据区分，我建议你使用 allkeys-lru 策略。</p>
+</li>
+<li><p>如果业务应用中的数据访问频率相差不大，没有明显的冷热数据区分，建议使用 allkeys-random 策略，随机选择淘汰的数据就行。</p>
+</li>
+<li><p>如果你的业务中有置顶的需求，比如置顶新闻、置顶视频，那么，可以使用 volatile-lru 策略，同时不给这些置顶数据设置过期时间。这样一来，这些需要置顶的数据一直不会被删除，而其他数据会在过期时根据 LRU 规则进行筛选。</p>
+</li>
+</ul>
+<p>在使用 LRU 策略淘汰数据时，<strong>因为只看数据的访问时间，使用 LRU 策略在处理扫描式单次查询操作时，无法解决缓存污染。</strong></p>
+<p>在使用 LRU 策略淘汰数据时，这些数据会留存在缓存中很长一段时间，造成缓存污染。如果查询的数据量很大，这些数据占满了缓存空间，却又不会服务新的缓存请求，此时，再有新数据要写入缓存的话，还是需要先把这些旧数据替换出缓存才行，这会影响缓存的性能。</p>
+<p><img src="https://i.loli.net/2020/11/26/a9L3MbISiwCGnH5.png" alt="image.png"></p>
+<p>对于采用了 LRU 策略的 Redis 缓存来说，扫描式单次查询会造成缓存污染。为了应对这类缓存污染问题，Redis 从 4.0 版本开始增加了 LFU 淘汰策略。</p>
+<h4 id="LFU-缓存策略"><a href="#LFU-缓存策略" class="headerlink" title="LFU 缓存策略"></a>LFU 缓存策略</h4><p>LFU 缓存策略是在 LRU 策略基础上，为每个数据增加了一个计数器，来统计这个数据的访问次数。当使用 LFU 策略筛选淘汰数据时，首先会根据数据的访问次数进行筛选，把访问次数最低的数据淘汰出缓存。如果两个数据的访问次数相同，LFU 策略再比较这两个数据的访问时效性，把距离上一次访问时间更久的数据淘汰出缓存。</p>
+<p>和那些被频繁访问的数据相比，扫描式单次查询的数据因为不会被再次访问，所以它们的访问次数不会再增加。因此，LFU 策略会优先把这些访问次数低的数据淘汰出缓存。这样一来，LFU 策略就可以避免这些数据对缓存造成污染了。</p>
+<p><strong>Redis 在实现 LFU 策略的时候，只是把原来 24bit 大小的 lru 字段，又进一步拆分成了两部分。</strong></p>
+<ul>
+<li>ldt 值：lru 字段的前 16bit，表示数据的访问时间戳；</li>
+<li>counter 值：lru 字段的后 8bit，表示数据的访问次数。</li>
+</ul>
+<p><em>在实现 LFU 策略时，Redis 并没有采用数据每被访问一次，就给对应的 counter 值加 1 的计数规则，而是采用了一个更优化的计数规则。</em></p>
+<p>简单来说，LFU 策略实现的计数规则是：每当数据被访问一次时，首先，用计数器当前的值乘以配置项 lfu_log_factor 再加 1，再取其倒数，得到一个 p 值；然后，把这个 p 值和一个取值范围在（0，1）间的随机数 r 值比大小，只有 p 值大于 r 值时，计数器才加 1。</p>
+<h4 id="策略总结"><a href="#策略总结" class="headerlink" title="策略总结"></a>策略总结</h4><p>在实际业务应用中，LRU 和 LFU 两个策略都有应用。LRU 和 LFU 两个策略关注的数据访问特征各有侧重，LRU 策略更加关注<strong>数据的时效性</strong>，而 LFU 策略更加关注数<strong>据的访问频次</strong>。通常情况下，实际应用的负载具有较好的时间局部性，所以 LRU 策略的应用会更加广泛。但是，在扫描式查询的应用场景中，LFU 策略就可以很好地应对缓存污染问题了，建议优先使用。</p>
+<h4 id="如何处理被淘汰的数据？"><a href="#如何处理被淘汰的数据？" class="headerlink" title="如何处理被淘汰的数据？"></a>如何处理被淘汰的数据？</h4><p>一旦被淘汰的数据选定后，如果这个数据是干净数据，那么我们就直接删除；如果这个数据是脏数据，我们需要把它写回数据库，如下图所示：</p>
+<p><img src="https://i.loli.net/2020/11/26/yWUpV3qrnRCvGkZ.png" alt="image.png"></p>
+<p>干净数据和脏数据的区别就在于，和最初从后端数据库里读取时的值相比，有没有被修改过。干净数据一直没有被修改，所以后端数据库里的数据也是最新值。在替换时，它可以被直接删除。</p>
+<p>而脏数据就是曾经被修改过的，已经和后端数据库中保存的数据不一致了。此时，如果不把脏数据写回到数据库中，这个数据的最新值就丢失了，就会影响应用的正常使用。</p>
+<p>不过，对于 Redis 来说，它决定了被淘汰的数据后，会把它们删除。即使淘汰的数据是脏数据，Redis 也不会把它们写回数据库。所以，我们在使用 Redis 缓存时，如果数据被修改了，需要在数据修改时就将它写回数据库。否则，这个脏数据被淘汰时，会被 Redis 删除，而数据库里也没有最新的数据了。</p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/10/9%E3%80%81%E5%BA%94%E5%AF%B9%E5%8F%98%E6%85%A2%E7%9A%84Redis/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/07/10/9%E3%80%81%E5%BA%94%E5%AF%B9%E5%8F%98%E6%85%A2%E7%9A%84Redis/" class="post-title-link" itemprop="url">9、应对变慢的Redis</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-07-10 22:29:00" itemprop="dateCreated datePublished" datetime="2020-07-10T22:29:00+08:00">2020-07-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-26 00:30:52" itemprop="dateModified" datetime="2020-11-26T00:30:52+08:00">2020-11-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h2 id="应对变慢的Redis"><a href="#应对变慢的Redis" class="headerlink" title="应对变慢的Redis"></a>应对变慢的Redis</h2><h3 id="1、-获取-Redis-实例在当前环境下的基线性能。"><a href="#1、-获取-Redis-实例在当前环境下的基线性能。" class="headerlink" title="1、 获取 Redis 实例在当前环境下的基线性能。"></a>1、 获取 Redis 实例在当前环境下的基线性能。</h3><p>  从 2.8.7 版本开始，redis-cli 命令提供了–intrinsic-latency 选项</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;redis-cli --intrinsic-latency 120</span><br><span class="line">Max latency so far: 17 microseconds.</span><br><span class="line">Max latency so far: 44 microseconds.</span><br><span class="line">Max latency so far: 94 microseconds.</span><br><span class="line">Max latency so far: 110 microseconds.</span><br><span class="line">Max latency so far: 119 microseconds.</span><br><span class="line"></span><br><span class="line">36481658 total runs (avg latency: 3.2893 microseconds &#x2F; 3289.32 nanoseconds per run).</span><br><span class="line">Worst run took 36x longer than the average latency.</span><br></pre></td></tr></table></figure>
+
+<p>一般来说，你要把运行时延迟和基线性能进行对比，如果你观察到的 Redis 运行时延迟是其基线性能的 2 倍及以上，就可以认定 Redis 变慢了。</p>
+<h3 id="2、是否用了慢查询命令？"><a href="#2、是否用了慢查询命令？" class="headerlink" title="2、是否用了慢查询命令？"></a>2、是否用了慢查询命令？</h3><p>如果是的话，就使用其他命令替代慢查询命令，或者把聚合计算命令放在客户端做。</p>
+<p>使用复杂度过高的命令（例如SORT/SUION/ZUNIONSTORE/KEYS），或一次查询全量数据（例如LRANGE key 0 N，但N很大）</p>
+<p>分析：</p>
+<ul>
+<li>a) 查看slowlog是否存在这些命令 </li>
+<li>b) Redis进程CPU使用率是否飙升（聚合运算命令导致）</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>a) 不使用复杂度过高的命令，或用其他方式代替实现（放在客户端做)</li>
+<li>b) 数据尽量分批查询（LRANGE key 0 N，建议N&lt;=100，查询全量数据建议使用HSCAN/SSCAN/ZSCAN）</li>
+</ul>
+<h3 id="3、是否对过期-key-设置了相同的过期时间？"><a href="#3、是否对过期-key-设置了相同的过期时间？" class="headerlink" title="3、是否对过期 key 设置了相同的过期时间？"></a>3、是否对过期 key 设置了相同的过期时间？</h3><p>对于批量删除的 key，可以在每个 key 的过期时间上加一个随机数，避免同时删除。</p>
+<p>分析：</p>
+<ul>
+<li>a) 业务使用EXPIREAT/PEXPIREAT命令 </li>
+<li>b) Redis info中的expired_keys指标短期突增</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>a) 优化业务，过期增加随机时间，把时间打散，减轻删除过期key的压力 </li>
+<li>b) 运维层面，监控expired_keys指标，有短期突增及时报警排查</li>
+</ul>
+<h3 id="4、是否存在-bigkey？"><a href="#4、是否存在-bigkey？" class="headerlink" title="4、是否存在 bigkey？"></a>4、是否存在 bigkey？</h3><p>对于 bigkey 的删除操作，如果你的 Redis 是 4.0 及以上的版本，可以直接利用异步线程机制减少主线程阻塞；如果是 Redis 4.0 以前的版本，可以使用 SCAN 命令迭代删除；对于 bigkey 的集合查询和聚合操作，可以使用 SCAN 命令在客户端完成。</p>
+<p>分析：</p>
+<ul>
+<li>a) slowlog出现很多SET/DELETE变慢命令（bigkey分配内存和释放内存变慢） </li>
+<li>b) 使用redis-cli -h $host -p $port –bigkeys扫描出很多bigkey</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>a) 优化业务，避免存储bigkey </li>
+<li>b) Redis 4.0+可开启lazy-free机制</li>
+</ul>
+<h3 id="5、Redis-AOF-配置级别是什么？"><a href="#5、Redis-AOF-配置级别是什么？" class="headerlink" title="5、Redis AOF 配置级别是什么？"></a>5、Redis AOF 配置级别是什么？</h3><p>业务层面是否的确需要这一可靠性级别？如果我们需要高性能，同时也允许数据丢失，可以将配置项 no-appendfsync-on-rewrite 设置为 yes，避免 AOF 重写和 fsync 竞争磁盘 IO 资源，导致 Redis 延迟增加。当然， 如果既需要高性能又需要高可靠性，最好使用高速固态盘作为 AOF 日志的写入盘。</p>
+<p>分析：AOF使用awalys机制导致磁盘IO负载变高</p>
+<p>解决：</p>
+<ul>
+<li>a) 使用everysec机制 </li>
+<li>b) 丢失数据不敏感的业务不开启AOF</li>
+</ul>
+<h3 id="6、Redis-实例的内存使用是否过大？"><a href="#6、Redis-实例的内存使用是否过大？" class="headerlink" title="6、Redis 实例的内存使用是否过大？"></a>6、Redis 实例的内存使用是否过大？</h3><p>如果是的话，就增加机器内存，或者是使用 Redis 集群，分摊单机 Redis 的键值对数量和内存压力。同时，要避免出现 Redis 和其他内存需求大的应用共享机器的情况。</p>
+<p>分析：</p>
+<ul>
+<li>a) 实例内存达到maxmemory，且写入量大，淘汰key压力变大 </li>
+<li>b) Redis info中的evicted_keys指标短期突增</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>a) 业务层面，根据情况调整淘汰策略（随机比LRU快） </li>
+<li>b) 运维层面，监控evicted_keys指标，有短期突增及时报警 </li>
+<li>c) 集群扩容，多个实例减轻淘汰key的压力</li>
+</ul>
+<h3 id="7、在-Redis-实例的运行环境中，是否启用了透明大页机制？"><a href="#7、在-Redis-实例的运行环境中，是否启用了透明大页机制？" class="headerlink" title="7、在 Redis 实例的运行环境中，是否启用了透明大页机制？"></a>7、在 Redis 实例的运行环境中，是否启用了透明大页机制？</h3><p>分析：</p>
+<ul>
+<li>生成RDB和AOF重写期间，主线程处理写请求耗时变长（拷贝内存副本耗时变长）</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>直接关闭内存大页机制就行了。</li>
+</ul>
+<h3 id="8、是否运行了-Redis-主从集群？"><a href="#8、是否运行了-Redis-主从集群？" class="headerlink" title="8、是否运行了 Redis 主从集群？"></a>8、是否运行了 Redis 主从集群？</h3><p>如果是的话，把主库实例的数据量大小控制在 2~4GB，以免主从复制时，从库因加载大的 RDB 文件而阻塞。</p>
+<h3 id="9、是否使用了多核-CPU-或-NUMA-架构的机器运行-Redis-实例？"><a href="#9、是否使用了多核-CPU-或-NUMA-架构的机器运行-Redis-实例？" class="headerlink" title="9、是否使用了多核 CPU 或 NUMA 架构的机器运行 Redis 实例？"></a>9、是否使用了多核 CPU 或 NUMA 架构的机器运行 Redis 实例？</h3><ul>
+<li>使用多核 CPU 时，可以给 Redis 实例绑定物理核；</li>
+<li>使用 NUMA 架构时，注意把 Redis 实例和网络中断处理程序运行在同一个 CPU Socket 上。</li>
+</ul>
+<h3 id="10、进程绑定CPU不合理"><a href="#10、进程绑定CPU不合理" class="headerlink" title="10、进程绑定CPU不合理"></a>10、进程绑定CPU不合理</h3><p>分析：</p>
+<ul>
+<li>a) Redis进程只绑定一个CPU逻辑核 </li>
+<li>b) NUMA架构下，网络中断处理程序和Redis进程没有绑定在同一个CPU Socket下</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>a) 一个 Redis 实例对应绑一个物理核</li>
+<li>b) 网络中断处理程序和Redis进程绑定在同一个CPU Socket下</li>
+</ul>
+<h3 id="11、使用Swap？"><a href="#11、使用Swap？" class="headerlink" title="11、使用Swap？"></a>11、使用Swap？</h3><p>分析：</p>
+<ul>
+<li>a) 所有请求全部开始变慢 </li>
+<li>b) slowlog大量慢日志 </li>
+<li>c) 查看Redis进程是否使用到了Swap</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>a) 增加机器内存 </li>
+<li>b) 集群扩容 </li>
+<li>c) Swap使用时监控报警</li>
+</ul>
+<h3 id="12、网卡负载过高"><a href="#12、网卡负载过高" class="headerlink" title="12、网卡负载过高"></a>12、网卡负载过高</h3><p>分析：</p>
+<ul>
+<li><p>a) TCP/IP层延迟变大，丢包重传变多 </p>
+</li>
+<li><p>b) 是否存在流量过大的实例占满带宽</p>
+</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>a) 机器网络资源监控，负载过高及时报警 </li>
+<li>b) 提前规划部署策略，访问量大的实例隔离部署</li>
+</ul>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/05/8%E3%80%81%E5%93%A8%E5%85%B5%E9%9B%86%E7%BE%A4%EF%BC%9A%E5%93%A8%E5%85%B5%E6%8C%82%E4%BA%86%EF%BC%8C%E4%B8%BB%E4%BB%8E%E5%BA%93%E8%BF%98%E8%83%BD%E5%88%87%E6%8D%A2%E5%90%97%EF%BC%9F/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -161,7 +537,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/07/05/8%E3%80%81%E5%93%A8%E5%85%B5%E9%9B%86%E7%BE%A4%EF%BC%9A%E5%93%A8%E5%85%B5%E6%8C%82%E4%BA%86%EF%BC%8C%E4%B8%BB%E4%BB%8E%E5%BA%93%E8%BF%98%E8%83%BD%E5%88%87%E6%8D%A2%E5%90%97%EF%BC%9F/" class="post-title-link" itemprop="url">8、哨兵集群：哨兵挂了，主从库还能切换吗？</a>
+            <a href="/2020/07/05/8%E3%80%81%E5%93%A8%E5%85%B5%E9%9B%86%E7%BE%A4%EF%BC%9A%E5%93%A8%E5%85%B5%E6%8C%82%E4%BA%86%EF%BC%8C%E4%B8%BB%E4%BB%8E%E5%BA%93%E8%BF%98%E8%83%BD%E5%88%87%E6%8D%A2%E5%90%97%EF%BC%9F/" class="post-title-link" itemprop="url">8、哨兵集群</a>
         </h2>
 
         <div class="post-meta">
@@ -177,6 +553,8 @@
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-26 00:35:47" itemprop="dateModified" datetime="2020-11-26T00:35:47+08:00">2020-11-26</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -291,7 +669,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/07/01/7%E3%80%81%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%EF%BC%9A%E4%B8%BB%E5%BA%93%E6%8C%82%E4%BA%86%EF%BC%8C%E5%A6%82%E4%BD%95%E4%B8%8D%E9%97%B4%E6%96%AD%E6%9C%8D%E5%8A%A1%EF%BC%9F/" class="post-title-link" itemprop="url">7、哨兵机制：主库挂了，如何不间断服务？</a>
+            <a href="/2020/07/01/7%E3%80%81%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%EF%BC%9A%E4%B8%BB%E5%BA%93%E6%8C%82%E4%BA%86%EF%BC%8C%E5%A6%82%E4%BD%95%E4%B8%8D%E9%97%B4%E6%96%AD%E6%9C%8D%E5%8A%A1%EF%BC%9F/" class="post-title-link" itemprop="url">7、哨兵机制</a>
         </h2>
 
         <div class="post-meta">
@@ -307,6 +685,8 @@
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-26 00:36:16" itemprop="dateModified" datetime="2020-11-26T00:36:16+08:00">2020-11-26</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -453,7 +833,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/06/28/6%E3%80%816%E3%80%81Redis%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5%EF%BC%9A%E4%B8%BB%E4%BB%8E%E5%BA%93%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%EF%BC%9F/" class="post-title-link" itemprop="url">6、Redis数据同步：主从库如何实现数据一致？</a>
+            <a href="/2020/06/28/6%E3%80%816%E3%80%81Redis%E6%95%B0%E6%8D%AE%E5%90%8C%E6%AD%A5%EF%BC%9A%E4%B8%BB%E4%BB%8E%E5%BA%93%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E6%95%B0%E6%8D%AE%E4%B8%80%E8%87%B4%EF%BC%9F/" class="post-title-link" itemprop="url">6、Redis数据同步</a>
         </h2>
 
         <div class="post-meta">
@@ -469,6 +849,8 @@
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-26 00:36:30" itemprop="dateModified" datetime="2020-11-26T00:36:30+08:00">2020-11-26</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -612,7 +994,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/06/25/5%E3%80%81%E5%86%85%E5%AD%98%E5%BF%AB%E7%85%A7%EF%BC%9A%E5%AE%95%E6%9C%BA%E5%90%8E%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D%EF%BC%9F/" class="post-title-link" itemprop="url">5、内存快照：宕机后，Redis如何实现快速恢复？</a>
+            <a href="/2020/06/25/5%E3%80%81%E5%86%85%E5%AD%98%E5%BF%AB%E7%85%A7%EF%BC%9A%E5%AE%95%E6%9C%BA%E5%90%8E%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E5%AE%9E%E7%8E%B0%E5%BF%AB%E9%80%9F%E6%81%A2%E5%A4%8D%EF%BC%9F/" class="post-title-link" itemprop="url">5、内存快照</a>
         </h2>
 
         <div class="post-meta">
@@ -628,6 +1010,8 @@
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-26 00:36:37" itemprop="dateModified" datetime="2020-11-26T00:36:37+08:00">2020-11-26</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -729,7 +1113,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/06/23/4%E3%80%81-AOF%E6%97%A5%E5%BF%97%EF%BC%9A%E5%AE%95%E6%9C%BA%E4%BA%86%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1%EF%BC%9F/" class="post-title-link" itemprop="url">4、 AOF日志：宕机了，Redis如何避免数据丢失？</a>
+            <a href="/2020/06/23/4%E3%80%81-AOF%E6%97%A5%E5%BF%97%EF%BC%9A%E5%AE%95%E6%9C%BA%E4%BA%86%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1%EF%BC%9F/" class="post-title-link" itemprop="url">4、AOF日志</a>
         </h2>
 
         <div class="post-meta">
@@ -745,6 +1129,8 @@
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-26 00:37:28" itemprop="dateModified" datetime="2020-11-26T00:37:28+08:00">2020-11-26</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -849,7 +1235,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/06/21/3%E3%80%81Redis%E9%AB%98%E6%80%A7%E8%83%BDIO%E6%A8%A1%E5%9E%8B%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8D%95%E7%BA%BF%E7%A8%8BRedis%E8%83%BD%E9%82%A3%E4%B9%88%E5%BF%AB%EF%BC%9F/" class="post-title-link" itemprop="url">3、Redis高性能IO模型：为什么单线程Redis能那么快？</a>
+            <a href="/2020/06/21/3%E3%80%81Redis%E9%AB%98%E6%80%A7%E8%83%BDIO%E6%A8%A1%E5%9E%8B%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8D%95%E7%BA%BF%E7%A8%8BRedis%E8%83%BD%E9%82%A3%E4%B9%88%E5%BF%AB%EF%BC%9F/" class="post-title-link" itemprop="url">3、Redis高性能IO模型</a>
         </h2>
 
         <div class="post-meta">
@@ -865,6 +1251,8 @@
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-26 00:36:51" itemprop="dateModified" datetime="2020-11-26T00:36:51+08:00">2020-11-26</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -942,7 +1330,7 @@
       <header class="post-header">
         <h2 class="post-title" itemprop="name headline">
           
-            <a href="/2020/06/19/2%E3%80%81Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9A%E5%BF%AB%E9%80%9F%E7%9A%84Redis%E6%9C%89%E5%93%AA%E4%BA%9B%E6%85%A2%E6%93%8D%E4%BD%9C%EF%BC%9F/" class="post-title-link" itemprop="url">2、Redis数据结构：快速的Redis有哪些慢操作？</a>
+            <a href="/2020/06/19/2%E3%80%81Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9A%E5%BF%AB%E9%80%9F%E7%9A%84Redis%E6%9C%89%E5%93%AA%E4%BA%9B%E6%85%A2%E6%93%8D%E4%BD%9C%EF%BC%9F/" class="post-title-link" itemprop="url">2、Redis数据结构</a>
         </h2>
 
         <div class="post-meta">
@@ -958,6 +1346,8 @@
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-26 00:36:58" itemprop="dateModified" datetime="2020-11-26T00:36:58+08:00">2020-11-26</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -1097,317 +1487,6 @@
   
   
 
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/18/1%E3%80%81Redis-%E5%BC%95%E5%87%BA%E7%9A%84%E9%97%AE%E9%A2%98/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Nolan Chic">
-      <meta itemprop="description" content="Action speak louder than words.">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Nolan's Notes">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2020/06/18/1%E3%80%81Redis-%E5%BC%95%E5%87%BA%E7%9A%84%E9%97%AE%E9%A2%98/" class="post-title-link" itemprop="url">1、Redis 引出的问题</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2020-06-18 12:03:00" itemprop="dateCreated datePublished" datetime="2020-06-18T12:03:00+08:00">2020-06-18</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>#Redis 引出的问题</p>
-<p>为了保证数据的可靠性，Redis 需要在磁盘上读写 AOF 和 RDB，但在高并发场景里，这就会直接带来两个新问题：</p>
-<ul>
-<li>一个是写 AOF 和 RDB 会造成 Redis 性能抖动。(AOF，将Redis的操作日志以追加的方式写入文件。 RDB，将Redis在内存中的数据库记录定时dump到磁盘上的RDB持久化。)</li>
-<li>另一个是 Redis 集群数据同步和实例恢复时，读 RDB 比较慢，限制了同步和恢复速度。</li>
-</ul>
-<p>使用 Redis不同公司的“玩法”却不太一样，比如说，有做<strong>缓存</strong> 的，有做<strong>数据库</strong> 的，也有用做<strong>分布式锁</strong>的。不过，他们遇见的“坑”，总体来说集中在四个方面：</p>
-<ul>
-<li><p>CPU 使用上的“坑”，例如数据结构的复杂度、跨 CPU 核的访问；</p>
-</li>
-<li><p>内存使用上的“坑”，例如主从同步和 AOF 的内存竞争；</p>
-</li>
-<li><p>存储持久化上的“坑”，例如在 SSD 上做快照的性能抖动；</p>
-</li>
-<li><p>网络通信上的“坑”，例如多实例时的异常网络丢包。</p>
-</li>
-</ul>
-<h2 id="Redis-知识全景图"><a href="#Redis-知识全景图" class="headerlink" title="Redis 知识全景图"></a>Redis 知识全景图</h2><p><img src="https://i.loli.net/2020/11/12/mWzZDSbtMrByacs.png" alt="Redis知识全景图"></p>
-<p>两大维度，三大主线</p>
-<p>“两大维度”就是指系统维度和应用维度，“三大主线”也就是指高性能、高可靠和高可扩展（可以简称为“三高”）。</p>
-<h2 id="Redis-的问题画像图"><a href="#Redis-的问题画像图" class="headerlink" title="Redis 的问题画像图"></a>Redis 的问题画像图</h2><p><img src="https://i.loli.net/2020/11/23/2ezApVfKLnhBvGm.png" alt="Redis的问题画像图"></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/15/Structure/PAAS%E3%80%81IAAS%E5%92%8CSAAS%E4%B9%8B%E9%97%B4%E7%9A%84%E5%8C%BA%E5%88%AB/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Nolan Chic">
-      <meta itemprop="description" content="Action speak louder than words.">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Nolan's Notes">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2018/08/15/Structure/PAAS%E3%80%81IAAS%E5%92%8CSAAS%E4%B9%8B%E9%97%B4%E7%9A%84%E5%8C%BA%E5%88%AB/" class="post-title-link" itemprop="url">PAAS、IAAS和SAAS之间的区别</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2018-08-15 21:22:33" itemprop="dateCreated datePublished" datetime="2018-08-15T21:22:33+08:00">2018-08-15</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-09-16 18:47:34" itemprop="dateModified" datetime="2020-09-16T18:47:34+08:00">2020-09-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Structure/" itemprop="url" rel="index"><span itemprop="name">Structure</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="PAAS、IAAS和SAAS之间的区别"><a href="#PAAS、IAAS和SAAS之间的区别" class="headerlink" title="PAAS、IAAS和SAAS之间的区别"></a>PAAS、IAAS和SAAS之间的区别</h1><p>云计算的发展这几年大家也看到了，非常火热。各种新概念层出不穷，如果你不是专业人士，这些新概念让你一脸茫然是很正常的。</p>
-<p>所以最近比较多的小伙伴向我咨询一个问题，那就是PAAS、IAAS和SAAS之间的区别？正好今天小编比较闲，就在这为大家解释一下。当然首先请允许小编从专业的角度来解释一下PAAS、IAAS和SAAS之间的概念区别。</p>
-<p>用户通过Internet 可以从完善的计算机基础设施获得服务。这类服务可以称为基础设施即服务，这就是通常所说的IAAS。而相应的另外两种服务就是平台即服务和软件即服务。平台及服务提供了用户可以访问的完整或部分的应用程序开发,我们通常称之为PAAS。软件及服务则提供了完整的可直接使用的应用程序，我们通常称之为SAAS。如果把他们看作层次结构，那么第一层自然叫做IAAS，第二层就是PAAS，第三层也就是SAAS。好了专业的就说到这里，想必很多小伙伴还是一知半解。那么下面开始说人话。</p>
-<p>假设、如果、假如你是个吃货，而且还非常喜欢披萨这种食品，那么这个问题就很好解释了。一个吃货是怎样吃到披萨的呢?大致有下面的几种方法：</p>
-<h3 id="1-完全自己做"><a href="#1-完全自己做" class="headerlink" title="1. 完全自己做"></a>1. 完全自己做</h3><p>不好意思，如果自己做这实在是个麻烦事，你得准备很多东西，比如餐桌、披萨面团。。。。。等等，如下图所示：</p>
-<p><img src="https://i.loli.net/2020/09/16/e6hflnkHrwsqKTz.jpg"></p>
-<h3 id="2-买好速食披萨回家自己做着吃"><a href="#2-买好速食披萨回家自己做着吃" class="headerlink" title="2. 买好速食披萨回家自己做着吃"></a>2. 买好速食披萨回家自己做着吃</h3><p>你只需要从披萨店里买回成品，回家烘焙就好了，在自己的餐桌上吃。和自己在家做不同，你需要一个披萨供应商。如下图所示：</p>
-<p><img src="https://i.loli.net/2020/09/16/rjwPxyUgh5u9VAS.jpg"></p>
-<h3 id="3-打电话叫外卖将披萨送到家中"><a href="#3-打电话叫外卖将披萨送到家中" class="headerlink" title="3. 打电话叫外卖将披萨送到家中"></a>3. 打电话叫外卖将披萨送到家中</h3><p>打个电话，披萨就送到家门口。如下图所示：</p>
-<p><img src="https://i.loli.net/2020/09/16/oOF5DYeNthUvpwA.jpg"></p>
-<h4 id="4-在披萨店吃披萨"><a href="#4-在披萨店吃披萨" class="headerlink" title="4.在披萨店吃披萨"></a>4.在披萨店吃披萨</h4><p>你什么都不需要准备，连餐桌也是披萨店的。如下图所示：</p>
-<p><img src="https://i.loli.net/2020/09/16/mDjlvR9QsAqC2LU.jpg"></p>
-<h4 id="总结一下"><a href="#总结一下" class="headerlink" title="总结一下"></a>总结一下</h4><p>是不是如下图所示几种途径都可以吃到披萨：</p>
-<p><img src="https://i.loli.net/2020/09/16/EhmPr7JsbIXM14Z.jpg"></p>
-<p>现在我们从披萨中回到云计算的概念来。假设你是一家超级牛逼的技术公司，根本不需要别人提供服务，你拥有基础设施、应用等等其它一切，你把它们分为三层：基础设施(infrastructure)、平台(platform)和软件(software)，如下图：</p>
-<p><img src="https://i.loli.net/2020/09/16/OEWBDTFulbr745R.jpg"></p>
-<p>这其实就是云计算的三个分层，基础设施在最下端，平台在中间，软件在顶端，分别是Infrastructure-as-a-Service(IAAS)，Platform-as-a-Service(PAAS)，Software-as-a-Service(SAAS)，别的一些“软”的层可以在这些层上面添加。</p>
-<p>而你的公司什么都有，现在所处的状态叫本地部署(On-Premises)，就像在自己家做披萨一样。如果你想在办公室或者公司的网站上运行一些企业应用，你需要去买服务器，或者别的高昂的硬件来控制本地应用，让你的业务运行起来，这就叫本地部署。</p>
-<p>假如你突然有一天想明白了，只是为了吃上披萨，为什么非要自己做呢?于是，准备考虑一家云服务供应商，这个云服务供应商能提供哪些服务呢?其所能提供的云服务也就是云计算的三个分层：PAAS、IAAS和SAAS，就像披萨店提供三种服务：买成品回家做、外卖和到披萨店吃。如下图：</p>
-<p><img src="https://i.loli.net/2020/09/16/hTq31DPZ5468ezK.jpg"></p>
-<p>IAAS: Infrastructure-as-a-Service(基础设施即服务)，有了IAAS，你可以将硬件外包到别的地方去。IAAS公司会提供场外服务器，存储和网络硬件，你可以租用。节省了维护成本和办公场地，公司可以在任何时候利用这些硬件来运行其应用。一些大的IAAS公司包括Amazon, Microsoft, VMWare, Rackspace和Red Hat.不过这些公司又都有自己的专长，比如Amazon和微软给你提供的不只是IAAS，他们还会将其计算能力出租给你来host你的网站。</p>
-<p>PAAS: Platform-as-a-Service(平台即服务)，第二层就是所谓的PAAS，某些时候也叫做中间件。你公司所有的开发都可以在这一层进行，节省了时间和资源。</p>
-<p>PAAS公司在网上提供各种开发和分发应用的解决方案，比如虚拟服务器和操作系统。这节省了你在硬件上的费用，也让分散的工作室之间的合作变得更加容易。网页应用管理，应用设计，应用虚拟主机，存储，安全以及应用开发协作工具等。</p>
-<p>一些大的PAAS提供者有Google App Engine,Microsoft Azure，Force.com,Heroku，Engine Yard。最近兴起的公司有AppFog,Mendix和Standing Cloud.</p>
-<p>SAAS: Software-as-a-Service(软件即服务)，第三层也就是所谓SAAS。这一层是和你的生活每天接触的一层，大多是通过网页浏览器来接入。任何一个远程服务器上的应用都可以通过网络来运行，就是SAAS了。你消费的服务完全是从网页如Netflix,MOG,Google Apps,Box.net,Dropbox或者苹果的iCloud那里进入这些分类。尽管这些网页服务是用作商务和娱乐或者两者都有，但这也算是云技术的一部分。一些用作商务的SaaS应用包括Citrix的Go To Meeting，Cisco的WebEx，Salesforce的CRM，ADP，Workday和SuccessFactors。</p>
-<p>参考文档</p>
-<p><a target="_blank" rel="noopener" href="http://www.ruanyifeng.co/">IaaS,PaaS,SaaS 的区别 - 阮一峰的网络日志</a></p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/07/Algorithm/BubbleSort/bubble/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Nolan Chic">
-      <meta itemprop="description" content="Action speak louder than words.">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Nolan's Notes">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2018/08/07/Algorithm/BubbleSort/bubble/" class="post-title-link" itemprop="url">BubbleSort</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2018-08-07 23:19:36" itemprop="dateCreated datePublished" datetime="2018-08-07T23:19:36+08:00">2018-08-07</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-09-16 18:45:11" itemprop="dateModified" datetime="2020-09-16T18:45:11+08:00">2020-09-16</time>
-              </span>
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-folder"></i>
-              </span>
-              <span class="post-meta-item-text">In</span>
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
-                </span>
-                  , 
-                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
-                  <a href="/categories/Algorithm/BubbleSort/" itemprop="url" rel="index"><span itemprop="name">BubbleSort</span></a>
-                </span>
-            </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <h1 id="冒泡排序"><a href="#冒泡排序" class="headerlink" title="冒泡排序"></a>冒泡排序</h1><h3 id="一、冒泡排序"><a href="#一、冒泡排序" class="headerlink" title="一、冒泡排序"></a>一、冒泡排序</h3><p>原理：对一组数据，比较相邻数据的大小，将值小数据在前面，值大的数据放在后面。   （以下都是升序排列，即从小到大排列）</p>
-<p>举例说明： $arr = array(6, 3, 8, 2, 9, 1);</p>
-<p>$arr 有6个数据，按照两两比较大小如下，注意  比较轮数 和 每轮比较次数 </p>
-<h4 id="第一轮排序："><a href="#第一轮排序：" class="headerlink" title="第一轮排序："></a>第一轮排序：</h4><p>第一次比较  6和3比较 结果：<strong>3   6</strong>   8   2   9   1     </p>
-<p>第二次比较  6和3比较 结果：3   <strong>6   8</strong>   2   9   1 </p>
-<p>第三次比较  8和2比较 结果：3    6   <strong>2   8</strong>   9   1 </p>
-<p>第四次比较  8和9比较 结果：3    6   2   <strong>8   9</strong>   1 </p>
-<p>第五次比较  9和1比较 结果：3    6   2   8   <strong>1   9</strong> </p>
-<p>第一轮比较总结：</p>
-<p>1.排序第1轮、比较5次，没有获得从小到大的排序   </p>
-<p>2.因为每次比较都是大数往后靠，所以比较完成后，可以确定大数排在最后（9 已经冒泡冒出来了，下轮比较可以不用比较了 ）</p>
-<h4 id="第二轮排序："><a href="#第二轮排序：" class="headerlink" title="第二轮排序："></a>第二轮排序：</h4><p>第一次比较  3和6比较 结果：<strong>3    6</strong>   2   8   1   9     </p>
-<p>第二次比较  6和2比较 结果：3    <strong>2   6</strong>   8   1   9 </p>
-<p>第三次比较  6和8比较 结果：3    2   <strong>6   8</strong>   1   9 </p>
-<p>第四次比较  8和1比较 结果：3    2   6   <strong>1   8</strong>   9</p>
-<p>第一轮比较总结：</p>
-<p>1.排序第2轮、比较4次，没有获得从小到大的排序</p>
-<p>2.冒泡出了 8，下轮不用比较8 了</p>
-<h4 id="第三轮排序："><a href="#第三轮排序：" class="headerlink" title="第三轮排序："></a>第三轮排序：</h4><p>第一次比较  3和2比较 结果：<strong>2    3</strong>   6   1   8   9     </p>
-<p>第二次比较  3和6比较 结果：2    <strong>3   6</strong>   1   8   9 </p>
-<p>第三次比较  6和1比较 结果：2    3   <strong>1   6</strong>   8   9 </p>
-<p>第三轮比较总结：</p>
-<p>1.排序第3轮、比较3次，没有获得从小到大的排序  </p>
-<p>2.冒泡出了 6，下轮不用比较6 了　</p>
-<h4 id="第四轮排序："><a href="#第四轮排序：" class="headerlink" title="第四轮排序："></a>第四轮排序：</h4><p>第一次比较  2和3比较 结果：2    3   1   6   8   9     </p>
-<p>第二次比较  3和1比较 结果：2    1   3   6   8   9 </p>
-<p>第四轮比较总结：</p>
-<p>1.排序第4轮、比较2次，没有获得从小到大的排序   </p>
-<p>2.冒泡出了 3，下轮不用比较3 了</p>
-<h4 id="第五轮排序："><a href="#第五轮排序：" class="headerlink" title="第五轮排序："></a>第五轮排序：</h4><p>第一次比较  2和1比较 结果：1   2   3   6   8   9     </p>
-<p>第五轮比较总结：</p>
-<p>1.排序第5轮、比较1次，没有获得从小到大的排序  </p>
-<p>2.冒泡出了 2，由于还剩一个1，不用再比较了，至此通过5轮排序，完成整个排序。</p>
-<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>通过以上五轮排序，若干次比较，我们有理由推断出一个结论：</p>
-<p>对于一个长度为N的数组，我们需要排序 N-1 轮，每 i 轮 要比较 N-i 次。对此我们可以用双重循环语句，外层循环控制循环轮次，内层循环控制每轮的比较次数。</p>
-<h4 id="Golang实现"><a href="#Golang实现" class="headerlink" title="Golang实现"></a>Golang实现</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">func sort_bubble(arr []int) &#123;</span><br><span class="line"></span><br><span class="line">	len :&#x3D; len(arr)</span><br><span class="line">	for i:&#x3D;1;i&lt;len;i++&#123;</span><br><span class="line">		for j:&#x3D;0;j&lt;len-i;j++&#123;</span><br><span class="line">			if arr[j] &gt; arr[j+1]&#123;</span><br><span class="line">				arr[j],arr[j+1] &#x3D; arr[j+1],arr[j]</span><br><span class="line"></span><br><span class="line">			&#125;</span><br><span class="line">			fmt.Println(arr)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	fmt.Println()</span><br><span class="line">	fmt.Println(arr)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">	arr :&#x3D; [...]int&#123;6,3,8,2,9,1&#125;</span><br><span class="line">	slice :&#x3D; arr[:]</span><br><span class="line">	fmt.Println(slice)</span><br><span class="line">	fmt.Println()</span><br><span class="line">	sort_bubble2(slice)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-
-
-<h4 id="PHP实现"><a href="#PHP实现" class="headerlink" title="PHP实现"></a>PHP实现</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">function bubble($arr)</span><br><span class="line">&#123;</span><br><span class="line">    $count &#x3D; count($arr);</span><br><span class="line"></span><br><span class="line">    for ($i &#x3D; 1; $i &lt;$count;$i++)&#123;</span><br><span class="line">        for ($j &#x3D;0; $j&lt;$count-$i;$j++)&#123;</span><br><span class="line">            if($arr[$j] &gt; $arr[$j+1])&#123;</span><br><span class="line">                $tmp &#x3D; 0;</span><br><span class="line">                $tmp &#x3D; $arr[$j];</span><br><span class="line">                $arr[$j] &#x3D; $arr[$j+1];</span><br><span class="line">                $arr[$j+1] &#x3D; $tmp;</span><br><span class="line"></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    print_r($arr);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$arr &#x3D; array(6, 3, 8, 2, 9, 1);</span><br><span class="line">bubble($arr);</span><br></pre></td></tr></table></figure>
-
-
-
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
 
   
   <nav class="pagination">
@@ -1477,7 +1556,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-count">20</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

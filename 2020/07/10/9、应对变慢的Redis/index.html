@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 5.1.1">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"yoursite.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="应对变慢的Redis1、 获取 Redis 实例在当前环境下的基线性能。  从 2.8.7 版本开始，redis-cli 命令提供了–intrinsic-latency 选项 123456789.&#x2F;redis-cli --intrinsic-latency 120Max latency so far: 17 microseconds.Max latency so far: 44 micr">
+<meta property="og:type" content="article">
+<meta property="og:title" content="9、应对变慢的Redis">
+<meta property="og:url" content="http://yoursite.com/2020/07/10/9%E3%80%81%E5%BA%94%E5%AF%B9%E5%8F%98%E6%85%A2%E7%9A%84Redis/index.html">
+<meta property="og:site_name" content="Nolan&#39;s Notes">
+<meta property="og:description" content="应对变慢的Redis1、 获取 Redis 实例在当前环境下的基线性能。  从 2.8.7 版本开始，redis-cli 命令提供了–intrinsic-latency 选项 123456789.&#x2F;redis-cli --intrinsic-latency 120Max latency so far: 17 microseconds.Max latency so far: 44 micr">
+<meta property="og:locale">
+<meta property="article:published_time" content="2020-07-10T14:29:00.000Z">
+<meta property="article:modified_time" content="2020-11-25T16:30:52.993Z">
+<meta property="article:author" content="Nolan Chic">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://yoursite.com/2020/07/10/9%E3%80%81%E5%BA%94%E5%AF%B9%E5%8F%98%E6%85%A2%E7%9A%84Redis/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh-Hans'
+  };
+</script>
+
+  <title>9、应对变慢的Redis | Nolan's Notes</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">Nolan's Notes</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/07/10/9%E3%80%81%E5%BA%94%E5%AF%B9%E5%8F%98%E6%85%A2%E7%9A%84Redis/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          9、应对变慢的Redis
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-07-10 22:29:00" itemprop="dateCreated datePublished" datetime="2020-07-10T22:29:00+08:00">2020-07-10</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-26 00:30:52" itemprop="dateModified" datetime="2020-11-26T00:30:52+08:00">2020-11-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h2 id="应对变慢的Redis"><a href="#应对变慢的Redis" class="headerlink" title="应对变慢的Redis"></a>应对变慢的Redis</h2><h3 id="1、-获取-Redis-实例在当前环境下的基线性能。"><a href="#1、-获取-Redis-实例在当前环境下的基线性能。" class="headerlink" title="1、 获取 Redis 实例在当前环境下的基线性能。"></a>1、 获取 Redis 实例在当前环境下的基线性能。</h3><p>  从 2.8.7 版本开始，redis-cli 命令提供了–intrinsic-latency 选项</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">.&#x2F;redis-cli --intrinsic-latency 120</span><br><span class="line">Max latency so far: 17 microseconds.</span><br><span class="line">Max latency so far: 44 microseconds.</span><br><span class="line">Max latency so far: 94 microseconds.</span><br><span class="line">Max latency so far: 110 microseconds.</span><br><span class="line">Max latency so far: 119 microseconds.</span><br><span class="line"></span><br><span class="line">36481658 total runs (avg latency: 3.2893 microseconds &#x2F; 3289.32 nanoseconds per run).</span><br><span class="line">Worst run took 36x longer than the average latency.</span><br></pre></td></tr></table></figure>
+
+<p>一般来说，你要把运行时延迟和基线性能进行对比，如果你观察到的 Redis 运行时延迟是其基线性能的 2 倍及以上，就可以认定 Redis 变慢了。</p>
+<h3 id="2、是否用了慢查询命令？"><a href="#2、是否用了慢查询命令？" class="headerlink" title="2、是否用了慢查询命令？"></a>2、是否用了慢查询命令？</h3><p>如果是的话，就使用其他命令替代慢查询命令，或者把聚合计算命令放在客户端做。</p>
+<p>使用复杂度过高的命令（例如SORT/SUION/ZUNIONSTORE/KEYS），或一次查询全量数据（例如LRANGE key 0 N，但N很大）</p>
+<p>分析：</p>
+<ul>
+<li>a) 查看slowlog是否存在这些命令 </li>
+<li>b) Redis进程CPU使用率是否飙升（聚合运算命令导致）</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>a) 不使用复杂度过高的命令，或用其他方式代替实现（放在客户端做)</li>
+<li>b) 数据尽量分批查询（LRANGE key 0 N，建议N&lt;=100，查询全量数据建议使用HSCAN/SSCAN/ZSCAN）</li>
+</ul>
+<h3 id="3、是否对过期-key-设置了相同的过期时间？"><a href="#3、是否对过期-key-设置了相同的过期时间？" class="headerlink" title="3、是否对过期 key 设置了相同的过期时间？"></a>3、是否对过期 key 设置了相同的过期时间？</h3><p>对于批量删除的 key，可以在每个 key 的过期时间上加一个随机数，避免同时删除。</p>
+<p>分析：</p>
+<ul>
+<li>a) 业务使用EXPIREAT/PEXPIREAT命令 </li>
+<li>b) Redis info中的expired_keys指标短期突增</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>a) 优化业务，过期增加随机时间，把时间打散，减轻删除过期key的压力 </li>
+<li>b) 运维层面，监控expired_keys指标，有短期突增及时报警排查</li>
+</ul>
+<h3 id="4、是否存在-bigkey？"><a href="#4、是否存在-bigkey？" class="headerlink" title="4、是否存在 bigkey？"></a>4、是否存在 bigkey？</h3><p>对于 bigkey 的删除操作，如果你的 Redis 是 4.0 及以上的版本，可以直接利用异步线程机制减少主线程阻塞；如果是 Redis 4.0 以前的版本，可以使用 SCAN 命令迭代删除；对于 bigkey 的集合查询和聚合操作，可以使用 SCAN 命令在客户端完成。</p>
+<p>分析：</p>
+<ul>
+<li>a) slowlog出现很多SET/DELETE变慢命令（bigkey分配内存和释放内存变慢） </li>
+<li>b) 使用redis-cli -h $host -p $port –bigkeys扫描出很多bigkey</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>a) 优化业务，避免存储bigkey </li>
+<li>b) Redis 4.0+可开启lazy-free机制</li>
+</ul>
+<h3 id="5、Redis-AOF-配置级别是什么？"><a href="#5、Redis-AOF-配置级别是什么？" class="headerlink" title="5、Redis AOF 配置级别是什么？"></a>5、Redis AOF 配置级别是什么？</h3><p>业务层面是否的确需要这一可靠性级别？如果我们需要高性能，同时也允许数据丢失，可以将配置项 no-appendfsync-on-rewrite 设置为 yes，避免 AOF 重写和 fsync 竞争磁盘 IO 资源，导致 Redis 延迟增加。当然， 如果既需要高性能又需要高可靠性，最好使用高速固态盘作为 AOF 日志的写入盘。</p>
+<p>分析：AOF使用awalys机制导致磁盘IO负载变高</p>
+<p>解决：</p>
+<ul>
+<li>a) 使用everysec机制 </li>
+<li>b) 丢失数据不敏感的业务不开启AOF</li>
+</ul>
+<h3 id="6、Redis-实例的内存使用是否过大？"><a href="#6、Redis-实例的内存使用是否过大？" class="headerlink" title="6、Redis 实例的内存使用是否过大？"></a>6、Redis 实例的内存使用是否过大？</h3><p>如果是的话，就增加机器内存，或者是使用 Redis 集群，分摊单机 Redis 的键值对数量和内存压力。同时，要避免出现 Redis 和其他内存需求大的应用共享机器的情况。</p>
+<p>分析：</p>
+<ul>
+<li>a) 实例内存达到maxmemory，且写入量大，淘汰key压力变大 </li>
+<li>b) Redis info中的evicted_keys指标短期突增</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>a) 业务层面，根据情况调整淘汰策略（随机比LRU快） </li>
+<li>b) 运维层面，监控evicted_keys指标，有短期突增及时报警 </li>
+<li>c) 集群扩容，多个实例减轻淘汰key的压力</li>
+</ul>
+<h3 id="7、在-Redis-实例的运行环境中，是否启用了透明大页机制？"><a href="#7、在-Redis-实例的运行环境中，是否启用了透明大页机制？" class="headerlink" title="7、在 Redis 实例的运行环境中，是否启用了透明大页机制？"></a>7、在 Redis 实例的运行环境中，是否启用了透明大页机制？</h3><p>分析：</p>
+<ul>
+<li>生成RDB和AOF重写期间，主线程处理写请求耗时变长（拷贝内存副本耗时变长）</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>直接关闭内存大页机制就行了。</li>
+</ul>
+<h3 id="8、是否运行了-Redis-主从集群？"><a href="#8、是否运行了-Redis-主从集群？" class="headerlink" title="8、是否运行了 Redis 主从集群？"></a>8、是否运行了 Redis 主从集群？</h3><p>如果是的话，把主库实例的数据量大小控制在 2~4GB，以免主从复制时，从库因加载大的 RDB 文件而阻塞。</p>
+<h3 id="9、是否使用了多核-CPU-或-NUMA-架构的机器运行-Redis-实例？"><a href="#9、是否使用了多核-CPU-或-NUMA-架构的机器运行-Redis-实例？" class="headerlink" title="9、是否使用了多核 CPU 或 NUMA 架构的机器运行 Redis 实例？"></a>9、是否使用了多核 CPU 或 NUMA 架构的机器运行 Redis 实例？</h3><ul>
+<li>使用多核 CPU 时，可以给 Redis 实例绑定物理核；</li>
+<li>使用 NUMA 架构时，注意把 Redis 实例和网络中断处理程序运行在同一个 CPU Socket 上。</li>
+</ul>
+<h3 id="10、进程绑定CPU不合理"><a href="#10、进程绑定CPU不合理" class="headerlink" title="10、进程绑定CPU不合理"></a>10、进程绑定CPU不合理</h3><p>分析：</p>
+<ul>
+<li>a) Redis进程只绑定一个CPU逻辑核 </li>
+<li>b) NUMA架构下，网络中断处理程序和Redis进程没有绑定在同一个CPU Socket下</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>a) 一个 Redis 实例对应绑一个物理核</li>
+<li>b) 网络中断处理程序和Redis进程绑定在同一个CPU Socket下</li>
+</ul>
+<h3 id="11、使用Swap？"><a href="#11、使用Swap？" class="headerlink" title="11、使用Swap？"></a>11、使用Swap？</h3><p>分析：</p>
+<ul>
+<li>a) 所有请求全部开始变慢 </li>
+<li>b) slowlog大量慢日志 </li>
+<li>c) 查看Redis进程是否使用到了Swap</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>a) 增加机器内存 </li>
+<li>b) 集群扩容 </li>
+<li>c) Swap使用时监控报警</li>
+</ul>
+<h3 id="12、网卡负载过高"><a href="#12、网卡负载过高" class="headerlink" title="12、网卡负载过高"></a>12、网卡负载过高</h3><p>分析：</p>
+<ul>
+<li><p>a) TCP/IP层延迟变大，丢包重传变多 </p>
+</li>
+<li><p>b) 是否存在流量过大的实例占满带宽</p>
+</li>
+</ul>
+<p>解决：</p>
+<ul>
+<li>a) 机器网络资源监控，负载过高及时报警 </li>
+<li>b) 提前规划部署策略，访问量大的实例隔离部署</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2020/07/05/8%E3%80%81%E5%93%A8%E5%85%B5%E9%9B%86%E7%BE%A4%EF%BC%9A%E5%93%A8%E5%85%B5%E6%8C%82%E4%BA%86%EF%BC%8C%E4%B8%BB%E4%BB%8E%E5%BA%93%E8%BF%98%E8%83%BD%E5%88%87%E6%8D%A2%E5%90%97%EF%BC%9F/" rel="prev" title="8、哨兵集群">
+      <i class="fa fa-chevron-left"></i> 8、哨兵集群
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2020/07/16/10%E3%80%81%E6%B7%98%E6%B1%B0%E7%AD%96%E7%95%A5/" rel="next" title="10、淘汰策略">
+      10、淘汰策略 <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%BA%94%E5%AF%B9%E5%8F%98%E6%85%A2%E7%9A%84Redis"><span class="nav-number">1.</span> <span class="nav-text">应对变慢的Redis</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#1%E3%80%81-%E8%8E%B7%E5%8F%96-Redis-%E5%AE%9E%E4%BE%8B%E5%9C%A8%E5%BD%93%E5%89%8D%E7%8E%AF%E5%A2%83%E4%B8%8B%E7%9A%84%E5%9F%BA%E7%BA%BF%E6%80%A7%E8%83%BD%E3%80%82"><span class="nav-number">1.1.</span> <span class="nav-text">1、 获取 Redis 实例在当前环境下的基线性能。</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#2%E3%80%81%E6%98%AF%E5%90%A6%E7%94%A8%E4%BA%86%E6%85%A2%E6%9F%A5%E8%AF%A2%E5%91%BD%E4%BB%A4%EF%BC%9F"><span class="nav-number">1.2.</span> <span class="nav-text">2、是否用了慢查询命令？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#3%E3%80%81%E6%98%AF%E5%90%A6%E5%AF%B9%E8%BF%87%E6%9C%9F-key-%E8%AE%BE%E7%BD%AE%E4%BA%86%E7%9B%B8%E5%90%8C%E7%9A%84%E8%BF%87%E6%9C%9F%E6%97%B6%E9%97%B4%EF%BC%9F"><span class="nav-number">1.3.</span> <span class="nav-text">3、是否对过期 key 设置了相同的过期时间？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#4%E3%80%81%E6%98%AF%E5%90%A6%E5%AD%98%E5%9C%A8-bigkey%EF%BC%9F"><span class="nav-number">1.4.</span> <span class="nav-text">4、是否存在 bigkey？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#5%E3%80%81Redis-AOF-%E9%85%8D%E7%BD%AE%E7%BA%A7%E5%88%AB%E6%98%AF%E4%BB%80%E4%B9%88%EF%BC%9F"><span class="nav-number">1.5.</span> <span class="nav-text">5、Redis AOF 配置级别是什么？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#6%E3%80%81Redis-%E5%AE%9E%E4%BE%8B%E7%9A%84%E5%86%85%E5%AD%98%E4%BD%BF%E7%94%A8%E6%98%AF%E5%90%A6%E8%BF%87%E5%A4%A7%EF%BC%9F"><span class="nav-number">1.6.</span> <span class="nav-text">6、Redis 实例的内存使用是否过大？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#7%E3%80%81%E5%9C%A8-Redis-%E5%AE%9E%E4%BE%8B%E7%9A%84%E8%BF%90%E8%A1%8C%E7%8E%AF%E5%A2%83%E4%B8%AD%EF%BC%8C%E6%98%AF%E5%90%A6%E5%90%AF%E7%94%A8%E4%BA%86%E9%80%8F%E6%98%8E%E5%A4%A7%E9%A1%B5%E6%9C%BA%E5%88%B6%EF%BC%9F"><span class="nav-number">1.7.</span> <span class="nav-text">7、在 Redis 实例的运行环境中，是否启用了透明大页机制？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#8%E3%80%81%E6%98%AF%E5%90%A6%E8%BF%90%E8%A1%8C%E4%BA%86-Redis-%E4%B8%BB%E4%BB%8E%E9%9B%86%E7%BE%A4%EF%BC%9F"><span class="nav-number">1.8.</span> <span class="nav-text">8、是否运行了 Redis 主从集群？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#9%E3%80%81%E6%98%AF%E5%90%A6%E4%BD%BF%E7%94%A8%E4%BA%86%E5%A4%9A%E6%A0%B8-CPU-%E6%88%96-NUMA-%E6%9E%B6%E6%9E%84%E7%9A%84%E6%9C%BA%E5%99%A8%E8%BF%90%E8%A1%8C-Redis-%E5%AE%9E%E4%BE%8B%EF%BC%9F"><span class="nav-number">1.9.</span> <span class="nav-text">9、是否使用了多核 CPU 或 NUMA 架构的机器运行 Redis 实例？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#10%E3%80%81%E8%BF%9B%E7%A8%8B%E7%BB%91%E5%AE%9ACPU%E4%B8%8D%E5%90%88%E7%90%86"><span class="nav-number">1.10.</span> <span class="nav-text">10、进程绑定CPU不合理</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#11%E3%80%81%E4%BD%BF%E7%94%A8Swap%EF%BC%9F"><span class="nav-number">1.11.</span> <span class="nav-text">11、使用Swap？</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#12%E3%80%81%E7%BD%91%E5%8D%A1%E8%B4%9F%E8%BD%BD%E8%BF%87%E9%AB%98"><span class="nav-number">1.12.</span> <span class="nav-text">12、网卡负载过高</span></a></li></ol></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">Nolan Chic</p>
+  <div class="site-description" itemprop="description">Action speak louder than words.</div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">20</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+            <a href="/categories/">
+        <span class="site-state-item-count">10</span>
+        <span class="site-state-item-name">categories</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+            <a href="/tags/">
+        <span class="site-state-item-count">3</span>
+        <span class="site-state-item-name">tags</span></a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Nolan Chic</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+</body>
+</html>

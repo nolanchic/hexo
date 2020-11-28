@@ -22,7 +22,7 @@
 
   <meta name="description" content="Redis高性能IO模型：为什么单线程Redis能那么快？Redis 真的只有单线程吗？Redis 是单线程，主要是指 Redis 的网络 IO 和键值对读写是由一个线程来完成的，这也是 Redis 对外提供键值存储服务的主要流程。但 Redis 的其他功能，比如持久化、异步删除、集群数据同步等，其实是由额外的线程执行的。 Redis 单线程是指它对网络 IO 和数据读写的操作采用了一个线程，而采">
 <meta property="og:type" content="article">
-<meta property="og:title" content="3、Redis高性能IO模型：为什么单线程Redis能那么快？">
+<meta property="og:title" content="3、Redis高性能IO模型">
 <meta property="og:url" content="http://yoursite.com/2020/06/21/3%E3%80%81Redis%E9%AB%98%E6%80%A7%E8%83%BDIO%E6%A8%A1%E5%9E%8B%EF%BC%9A%E4%B8%BA%E4%BB%80%E4%B9%88%E5%8D%95%E7%BA%BF%E7%A8%8BRedis%E8%83%BD%E9%82%A3%E4%B9%88%E5%BF%AB%EF%BC%9F/index.html">
 <meta property="og:site_name" content="Nolan&#39;s Notes">
 <meta property="og:description" content="Redis高性能IO模型：为什么单线程Redis能那么快？Redis 真的只有单线程吗？Redis 是单线程，主要是指 Redis 的网络 IO 和键值对读写是由一个线程来完成的，这也是 Redis 对外提供键值存储服务的主要流程。但 Redis 的其他功能，比如持久化、异步删除、集群数据同步等，其实是由额外的线程执行的。 Redis 单线程是指它对网络 IO 和数据读写的操作采用了一个线程，而采">
@@ -31,7 +31,7 @@
 <meta property="og:image" content="https://i.loli.net/2020/11/17/VgRMFDhscyKIadU.png">
 <meta property="og:image" content="https://i.loli.net/2020/11/17/VgRMFDhscyKIadU.png">
 <meta property="article:published_time" content="2020-06-21T05:10:00.000Z">
-<meta property="article:modified_time" content="2020-11-23T15:27:08.820Z">
+<meta property="article:modified_time" content="2020-11-25T16:36:51.924Z">
 <meta property="article:author" content="Nolan Chic">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://i.loli.net/2020/11/17/i3arVHvIzAtwfmE.png">
@@ -49,7 +49,7 @@
   };
 </script>
 
-  <title>3、Redis高性能IO模型：为什么单线程Redis能那么快？ | Nolan's Notes</title>
+  <title>3、Redis高性能IO模型 | Nolan's Notes</title>
   
 
 
@@ -167,7 +167,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          3、Redis高性能IO模型：为什么单线程Redis能那么快？
+          3、Redis高性能IO模型
         </h1>
 
         <div class="post-meta">
@@ -183,6 +183,8 @@
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-26 00:36:51" itemprop="dateModified" datetime="2020-11-26T00:36:51+08:00">2020-11-26</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -242,12 +244,12 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/06/19/2%E3%80%81Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9A%E5%BF%AB%E9%80%9F%E7%9A%84Redis%E6%9C%89%E5%93%AA%E4%BA%9B%E6%85%A2%E6%93%8D%E4%BD%9C%EF%BC%9F/" rel="prev" title="2、Redis数据结构：快速的Redis有哪些慢操作？">
-      <i class="fa fa-chevron-left"></i> 2、Redis数据结构：快速的Redis有哪些慢操作？
+    <a href="/2020/06/19/2%E3%80%81Redis%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84%EF%BC%9A%E5%BF%AB%E9%80%9F%E7%9A%84Redis%E6%9C%89%E5%93%AA%E4%BA%9B%E6%85%A2%E6%93%8D%E4%BD%9C%EF%BC%9F/" rel="prev" title="2、Redis数据结构">
+      <i class="fa fa-chevron-left"></i> 2、Redis数据结构
     </a></div>
       <div class="post-nav-item">
-    <a href="/2020/06/23/4%E3%80%81-AOF%E6%97%A5%E5%BF%97%EF%BC%9A%E5%AE%95%E6%9C%BA%E4%BA%86%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1%EF%BC%9F/" rel="next" title="4、 AOF日志：宕机了，Redis如何避免数据丢失？">
-      4、 AOF日志：宕机了，Redis如何避免数据丢失？ <i class="fa fa-chevron-right"></i>
+    <a href="/2020/06/23/4%E3%80%81-AOF%E6%97%A5%E5%BF%97%EF%BC%9A%E5%AE%95%E6%9C%BA%E4%BA%86%EF%BC%8CRedis%E5%A6%82%E4%BD%95%E9%81%BF%E5%85%8D%E6%95%B0%E6%8D%AE%E4%B8%A2%E5%A4%B1%EF%BC%9F/" rel="next" title="4、AOF日志">
+      4、AOF日志 <i class="fa fa-chevron-right"></i>
     </a></div>
     </div>
       </footer>
@@ -321,7 +323,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-count">20</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

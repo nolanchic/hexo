@@ -22,7 +22,7 @@
 
   <meta name="description" content="哨兵集群：哨兵挂了，主从库还能切换吗？哨兵机制，它可以实现主从库的自动切换。通过部署多个实例，就形成了一个哨兵集群。哨兵集群中的多个实例共同判断，可以降低对主库下线的误判率。 一旦多个实例组成了哨兵集群，即使有哨兵实例出现故障挂掉了，其他哨兵还能继续协作完成主从库切换的工作，包括判定主库是不是处于下线状态，选择新主库，以及通知从库和客户端。 在配置哨兵的信息时，我们只需要用到下面的这个配置项，设置">
 <meta property="og:type" content="article">
-<meta property="og:title" content="8、哨兵集群：哨兵挂了，主从库还能切换吗？">
+<meta property="og:title" content="8、哨兵集群">
 <meta property="og:url" content="http://yoursite.com/2020/07/05/8%E3%80%81%E5%93%A8%E5%85%B5%E9%9B%86%E7%BE%A4%EF%BC%9A%E5%93%A8%E5%85%B5%E6%8C%82%E4%BA%86%EF%BC%8C%E4%B8%BB%E4%BB%8E%E5%BA%93%E8%BF%98%E8%83%BD%E5%88%87%E6%8D%A2%E5%90%97%EF%BC%9F/index.html">
 <meta property="og:site_name" content="Nolan&#39;s Notes">
 <meta property="og:description" content="哨兵集群：哨兵挂了，主从库还能切换吗？哨兵机制，它可以实现主从库的自动切换。通过部署多个实例，就形成了一个哨兵集群。哨兵集群中的多个实例共同判断，可以降低对主库下线的误判率。 一旦多个实例组成了哨兵集群，即使有哨兵实例出现故障挂掉了，其他哨兵还能继续协作完成主从库切换的工作，包括判定主库是不是处于下线状态，选择新主库，以及通知从库和客户端。 在配置哨兵的信息时，我们只需要用到下面的这个配置项，设置">
@@ -33,7 +33,7 @@
 <meta property="og:image" content="https://i.loli.net/2020/11/19/yfz8alIWeuZBg5O.png">
 <meta property="og:image" content="https://i.loli.net/2020/11/19/zNIWgq5Dhc1OVyA.png">
 <meta property="article:published_time" content="2020-07-05T07:31:00.000Z">
-<meta property="article:modified_time" content="2020-11-23T15:31:43.024Z">
+<meta property="article:modified_time" content="2020-11-25T16:35:47.032Z">
 <meta property="article:author" content="Nolan Chic">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://i.loli.net/2020/11/19/MLd56HPAsXuBjI4.png">
@@ -51,7 +51,7 @@
   };
 </script>
 
-  <title>8、哨兵集群：哨兵挂了，主从库还能切换吗？ | Nolan's Notes</title>
+  <title>8、哨兵集群 | Nolan's Notes</title>
   
 
 
@@ -169,7 +169,7 @@
     </span>
       <header class="post-header">
         <h1 class="post-title" itemprop="name headline">
-          8、哨兵集群：哨兵挂了，主从库还能切换吗？
+          8、哨兵集群
         </h1>
 
         <div class="post-meta">
@@ -185,6 +185,8 @@
                 <span class="post-meta-item-icon">
                   <i class="far fa-calendar-check"></i>
                 </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-26 00:35:47" itemprop="dateModified" datetime="2020-11-26T00:35:47+08:00">2020-11-26</time>
               </span>
             <span class="post-meta-item">
               <span class="post-meta-item-icon">
@@ -281,10 +283,13 @@
         
     <div class="post-nav">
       <div class="post-nav-item">
-    <a href="/2020/07/01/7%E3%80%81%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%EF%BC%9A%E4%B8%BB%E5%BA%93%E6%8C%82%E4%BA%86%EF%BC%8C%E5%A6%82%E4%BD%95%E4%B8%8D%E9%97%B4%E6%96%AD%E6%9C%8D%E5%8A%A1%EF%BC%9F/" rel="prev" title="7、哨兵机制：主库挂了，如何不间断服务？">
-      <i class="fa fa-chevron-left"></i> 7、哨兵机制：主库挂了，如何不间断服务？
+    <a href="/2020/07/01/7%E3%80%81%E5%93%A8%E5%85%B5%E6%9C%BA%E5%88%B6%EF%BC%9A%E4%B8%BB%E5%BA%93%E6%8C%82%E4%BA%86%EF%BC%8C%E5%A6%82%E4%BD%95%E4%B8%8D%E9%97%B4%E6%96%AD%E6%9C%8D%E5%8A%A1%EF%BC%9F/" rel="prev" title="7、哨兵机制">
+      <i class="fa fa-chevron-left"></i> 7、哨兵机制
     </a></div>
-      <div class="post-nav-item"></div>
+      <div class="post-nav-item">
+    <a href="/2020/07/10/9%E3%80%81%E5%BA%94%E5%AF%B9%E5%8F%98%E6%85%A2%E7%9A%84Redis/" rel="next" title="9、应对变慢的Redis">
+      9、应对变慢的Redis <i class="fa fa-chevron-right"></i>
+    </a></div>
     </div>
       </footer>
     
@@ -357,7 +362,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-count">20</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>

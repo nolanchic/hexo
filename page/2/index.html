@@ -147,6 +147,318 @@
   
   
   <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2020/06/18/1%E3%80%81Redis-%E5%BC%95%E5%87%BA%E7%9A%84%E9%97%AE%E9%A2%98/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2020/06/18/1%E3%80%81Redis-%E5%BC%95%E5%87%BA%E7%9A%84%E9%97%AE%E9%A2%98/" class="post-title-link" itemprop="url">1、Redis 画像</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2020-06-18 12:03:00" itemprop="dateCreated datePublished" datetime="2020-06-18T12:03:00+08:00">2020-06-18</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-11-26 00:39:10" itemprop="dateModified" datetime="2020-11-26T00:39:10+08:00">2020-11-26</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Redis/" itemprop="url" rel="index"><span itemprop="name">Redis</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="Redis-引出的问题"><a href="#Redis-引出的问题" class="headerlink" title="Redis 引出的问题"></a>Redis 引出的问题</h1><p>为了保证数据的可靠性，Redis 需要在磁盘上读写 AOF 和 RDB，但在高并发场景里，这就会直接带来两个新问题：</p>
+<ul>
+<li>一个是写 AOF 和 RDB 会造成 Redis 性能抖动。(AOF，将Redis的操作日志以追加的方式写入文件。 RDB，将Redis在内存中的数据库记录定时dump到磁盘上的RDB持久化。)</li>
+<li>另一个是 Redis 集群数据同步和实例恢复时，读 RDB 比较慢，限制了同步和恢复速度。</li>
+</ul>
+<p>使用 Redis不同公司的“玩法”却不太一样，比如说，有做<strong>缓存</strong> 的，有做<strong>数据库</strong> 的，也有用做<strong>分布式锁</strong>的。不过，他们遇见的“坑”，总体来说集中在四个方面：</p>
+<ul>
+<li><p>CPU 使用上的“坑”，例如数据结构的复杂度、跨 CPU 核的访问；</p>
+</li>
+<li><p>内存使用上的“坑”，例如主从同步和 AOF 的内存竞争；</p>
+</li>
+<li><p>存储持久化上的“坑”，例如在 SSD 上做快照的性能抖动；</p>
+</li>
+<li><p>网络通信上的“坑”，例如多实例时的异常网络丢包。</p>
+</li>
+</ul>
+<h2 id="Redis-知识全景图"><a href="#Redis-知识全景图" class="headerlink" title="Redis 知识全景图"></a>Redis 知识全景图</h2><p><img src="https://i.loli.net/2020/11/12/mWzZDSbtMrByacs.png" alt="Redis知识全景图"></p>
+<p>两大维度，三大主线</p>
+<p>“两大维度”就是指系统维度和应用维度，“三大主线”也就是指高性能、高可靠和高可扩展（可以简称为“三高”）。</p>
+<h2 id="Redis-的问题画像图"><a href="#Redis-的问题画像图" class="headerlink" title="Redis 的问题画像图"></a>Redis 的问题画像图</h2><p><img src="https://i.loli.net/2020/11/23/2ezApVfKLnhBvGm.png" alt="Redis的问题画像图"></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/15/Structure/PAAS%E3%80%81IAAS%E5%92%8CSAAS%E4%B9%8B%E9%97%B4%E7%9A%84%E5%8C%BA%E5%88%AB/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2018/08/15/Structure/PAAS%E3%80%81IAAS%E5%92%8CSAAS%E4%B9%8B%E9%97%B4%E7%9A%84%E5%8C%BA%E5%88%AB/" class="post-title-link" itemprop="url">PAAS、IAAS和SAAS之间的区别</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-08-15 21:22:33" itemprop="dateCreated datePublished" datetime="2018-08-15T21:22:33+08:00">2018-08-15</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-09-16 18:47:34" itemprop="dateModified" datetime="2020-09-16T18:47:34+08:00">2020-09-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Structure/" itemprop="url" rel="index"><span itemprop="name">Structure</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="PAAS、IAAS和SAAS之间的区别"><a href="#PAAS、IAAS和SAAS之间的区别" class="headerlink" title="PAAS、IAAS和SAAS之间的区别"></a>PAAS、IAAS和SAAS之间的区别</h1><p>云计算的发展这几年大家也看到了，非常火热。各种新概念层出不穷，如果你不是专业人士，这些新概念让你一脸茫然是很正常的。</p>
+<p>所以最近比较多的小伙伴向我咨询一个问题，那就是PAAS、IAAS和SAAS之间的区别？正好今天小编比较闲，就在这为大家解释一下。当然首先请允许小编从专业的角度来解释一下PAAS、IAAS和SAAS之间的概念区别。</p>
+<p>用户通过Internet 可以从完善的计算机基础设施获得服务。这类服务可以称为基础设施即服务，这就是通常所说的IAAS。而相应的另外两种服务就是平台即服务和软件即服务。平台及服务提供了用户可以访问的完整或部分的应用程序开发,我们通常称之为PAAS。软件及服务则提供了完整的可直接使用的应用程序，我们通常称之为SAAS。如果把他们看作层次结构，那么第一层自然叫做IAAS，第二层就是PAAS，第三层也就是SAAS。好了专业的就说到这里，想必很多小伙伴还是一知半解。那么下面开始说人话。</p>
+<p>假设、如果、假如你是个吃货，而且还非常喜欢披萨这种食品，那么这个问题就很好解释了。一个吃货是怎样吃到披萨的呢?大致有下面的几种方法：</p>
+<h3 id="1-完全自己做"><a href="#1-完全自己做" class="headerlink" title="1. 完全自己做"></a>1. 完全自己做</h3><p>不好意思，如果自己做这实在是个麻烦事，你得准备很多东西，比如餐桌、披萨面团。。。。。等等，如下图所示：</p>
+<p><img src="https://i.loli.net/2020/09/16/e6hflnkHrwsqKTz.jpg"></p>
+<h3 id="2-买好速食披萨回家自己做着吃"><a href="#2-买好速食披萨回家自己做着吃" class="headerlink" title="2. 买好速食披萨回家自己做着吃"></a>2. 买好速食披萨回家自己做着吃</h3><p>你只需要从披萨店里买回成品，回家烘焙就好了，在自己的餐桌上吃。和自己在家做不同，你需要一个披萨供应商。如下图所示：</p>
+<p><img src="https://i.loli.net/2020/09/16/rjwPxyUgh5u9VAS.jpg"></p>
+<h3 id="3-打电话叫外卖将披萨送到家中"><a href="#3-打电话叫外卖将披萨送到家中" class="headerlink" title="3. 打电话叫外卖将披萨送到家中"></a>3. 打电话叫外卖将披萨送到家中</h3><p>打个电话，披萨就送到家门口。如下图所示：</p>
+<p><img src="https://i.loli.net/2020/09/16/oOF5DYeNthUvpwA.jpg"></p>
+<h4 id="4-在披萨店吃披萨"><a href="#4-在披萨店吃披萨" class="headerlink" title="4.在披萨店吃披萨"></a>4.在披萨店吃披萨</h4><p>你什么都不需要准备，连餐桌也是披萨店的。如下图所示：</p>
+<p><img src="https://i.loli.net/2020/09/16/mDjlvR9QsAqC2LU.jpg"></p>
+<h4 id="总结一下"><a href="#总结一下" class="headerlink" title="总结一下"></a>总结一下</h4><p>是不是如下图所示几种途径都可以吃到披萨：</p>
+<p><img src="https://i.loli.net/2020/09/16/EhmPr7JsbIXM14Z.jpg"></p>
+<p>现在我们从披萨中回到云计算的概念来。假设你是一家超级牛逼的技术公司，根本不需要别人提供服务，你拥有基础设施、应用等等其它一切，你把它们分为三层：基础设施(infrastructure)、平台(platform)和软件(software)，如下图：</p>
+<p><img src="https://i.loli.net/2020/09/16/OEWBDTFulbr745R.jpg"></p>
+<p>这其实就是云计算的三个分层，基础设施在最下端，平台在中间，软件在顶端，分别是Infrastructure-as-a-Service(IAAS)，Platform-as-a-Service(PAAS)，Software-as-a-Service(SAAS)，别的一些“软”的层可以在这些层上面添加。</p>
+<p>而你的公司什么都有，现在所处的状态叫本地部署(On-Premises)，就像在自己家做披萨一样。如果你想在办公室或者公司的网站上运行一些企业应用，你需要去买服务器，或者别的高昂的硬件来控制本地应用，让你的业务运行起来，这就叫本地部署。</p>
+<p>假如你突然有一天想明白了，只是为了吃上披萨，为什么非要自己做呢?于是，准备考虑一家云服务供应商，这个云服务供应商能提供哪些服务呢?其所能提供的云服务也就是云计算的三个分层：PAAS、IAAS和SAAS，就像披萨店提供三种服务：买成品回家做、外卖和到披萨店吃。如下图：</p>
+<p><img src="https://i.loli.net/2020/09/16/hTq31DPZ5468ezK.jpg"></p>
+<p>IAAS: Infrastructure-as-a-Service(基础设施即服务)，有了IAAS，你可以将硬件外包到别的地方去。IAAS公司会提供场外服务器，存储和网络硬件，你可以租用。节省了维护成本和办公场地，公司可以在任何时候利用这些硬件来运行其应用。一些大的IAAS公司包括Amazon, Microsoft, VMWare, Rackspace和Red Hat.不过这些公司又都有自己的专长，比如Amazon和微软给你提供的不只是IAAS，他们还会将其计算能力出租给你来host你的网站。</p>
+<p>PAAS: Platform-as-a-Service(平台即服务)，第二层就是所谓的PAAS，某些时候也叫做中间件。你公司所有的开发都可以在这一层进行，节省了时间和资源。</p>
+<p>PAAS公司在网上提供各种开发和分发应用的解决方案，比如虚拟服务器和操作系统。这节省了你在硬件上的费用，也让分散的工作室之间的合作变得更加容易。网页应用管理，应用设计，应用虚拟主机，存储，安全以及应用开发协作工具等。</p>
+<p>一些大的PAAS提供者有Google App Engine,Microsoft Azure，Force.com,Heroku，Engine Yard。最近兴起的公司有AppFog,Mendix和Standing Cloud.</p>
+<p>SAAS: Software-as-a-Service(软件即服务)，第三层也就是所谓SAAS。这一层是和你的生活每天接触的一层，大多是通过网页浏览器来接入。任何一个远程服务器上的应用都可以通过网络来运行，就是SAAS了。你消费的服务完全是从网页如Netflix,MOG,Google Apps,Box.net,Dropbox或者苹果的iCloud那里进入这些分类。尽管这些网页服务是用作商务和娱乐或者两者都有，但这也算是云技术的一部分。一些用作商务的SaaS应用包括Citrix的Go To Meeting，Cisco的WebEx，Salesforce的CRM，ADP，Workday和SuccessFactors。</p>
+<p>参考文档</p>
+<p><a target="_blank" rel="noopener" href="http://www.ruanyifeng.co/">IaaS,PaaS,SaaS 的区别 - 阮一峰的网络日志</a></p>
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/07/Algorithm/BubbleSort/bubble/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="Nolan Chic">
+      <meta itemprop="description" content="Action speak louder than words.">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Nolan's Notes">
+    </span>
+      <header class="post-header">
+        <h2 class="post-title" itemprop="name headline">
+          
+            <a href="/2018/08/07/Algorithm/BubbleSort/bubble/" class="post-title-link" itemprop="url">BubbleSort</a>
+        </h2>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+
+              <time title="Created: 2018-08-07 23:19:36" itemprop="dateCreated datePublished" datetime="2018-08-07T23:19:36+08:00">2018-08-07</time>
+            </span>
+              <span class="post-meta-item">
+                <span class="post-meta-item-icon">
+                  <i class="far fa-calendar-check"></i>
+                </span>
+                <span class="post-meta-item-text">Edited on</span>
+                <time title="Modified: 2020-09-16 18:45:11" itemprop="dateModified" datetime="2020-09-16T18:45:11+08:00">2020-09-16</time>
+              </span>
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-folder"></i>
+              </span>
+              <span class="post-meta-item-text">In</span>
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Algorithm/" itemprop="url" rel="index"><span itemprop="name">Algorithm</span></a>
+                </span>
+                  , 
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Algorithm/BubbleSort/" itemprop="url" rel="index"><span itemprop="name">BubbleSort</span></a>
+                </span>
+            </span>
+
+          
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+          <h1 id="冒泡排序"><a href="#冒泡排序" class="headerlink" title="冒泡排序"></a>冒泡排序</h1><h3 id="一、冒泡排序"><a href="#一、冒泡排序" class="headerlink" title="一、冒泡排序"></a>一、冒泡排序</h3><p>原理：对一组数据，比较相邻数据的大小，将值小数据在前面，值大的数据放在后面。   （以下都是升序排列，即从小到大排列）</p>
+<p>举例说明： $arr = array(6, 3, 8, 2, 9, 1);</p>
+<p>$arr 有6个数据，按照两两比较大小如下，注意  比较轮数 和 每轮比较次数 </p>
+<h4 id="第一轮排序："><a href="#第一轮排序：" class="headerlink" title="第一轮排序："></a>第一轮排序：</h4><p>第一次比较  6和3比较 结果：<strong>3   6</strong>   8   2   9   1     </p>
+<p>第二次比较  6和3比较 结果：3   <strong>6   8</strong>   2   9   1 </p>
+<p>第三次比较  8和2比较 结果：3    6   <strong>2   8</strong>   9   1 </p>
+<p>第四次比较  8和9比较 结果：3    6   2   <strong>8   9</strong>   1 </p>
+<p>第五次比较  9和1比较 结果：3    6   2   8   <strong>1   9</strong> </p>
+<p>第一轮比较总结：</p>
+<p>1.排序第1轮、比较5次，没有获得从小到大的排序   </p>
+<p>2.因为每次比较都是大数往后靠，所以比较完成后，可以确定大数排在最后（9 已经冒泡冒出来了，下轮比较可以不用比较了 ）</p>
+<h4 id="第二轮排序："><a href="#第二轮排序：" class="headerlink" title="第二轮排序："></a>第二轮排序：</h4><p>第一次比较  3和6比较 结果：<strong>3    6</strong>   2   8   1   9     </p>
+<p>第二次比较  6和2比较 结果：3    <strong>2   6</strong>   8   1   9 </p>
+<p>第三次比较  6和8比较 结果：3    2   <strong>6   8</strong>   1   9 </p>
+<p>第四次比较  8和1比较 结果：3    2   6   <strong>1   8</strong>   9</p>
+<p>第一轮比较总结：</p>
+<p>1.排序第2轮、比较4次，没有获得从小到大的排序</p>
+<p>2.冒泡出了 8，下轮不用比较8 了</p>
+<h4 id="第三轮排序："><a href="#第三轮排序：" class="headerlink" title="第三轮排序："></a>第三轮排序：</h4><p>第一次比较  3和2比较 结果：<strong>2    3</strong>   6   1   8   9     </p>
+<p>第二次比较  3和6比较 结果：2    <strong>3   6</strong>   1   8   9 </p>
+<p>第三次比较  6和1比较 结果：2    3   <strong>1   6</strong>   8   9 </p>
+<p>第三轮比较总结：</p>
+<p>1.排序第3轮、比较3次，没有获得从小到大的排序  </p>
+<p>2.冒泡出了 6，下轮不用比较6 了　</p>
+<h4 id="第四轮排序："><a href="#第四轮排序：" class="headerlink" title="第四轮排序："></a>第四轮排序：</h4><p>第一次比较  2和3比较 结果：2    3   1   6   8   9     </p>
+<p>第二次比较  3和1比较 结果：2    1   3   6   8   9 </p>
+<p>第四轮比较总结：</p>
+<p>1.排序第4轮、比较2次，没有获得从小到大的排序   </p>
+<p>2.冒泡出了 3，下轮不用比较3 了</p>
+<h4 id="第五轮排序："><a href="#第五轮排序：" class="headerlink" title="第五轮排序："></a>第五轮排序：</h4><p>第一次比较  2和1比较 结果：1   2   3   6   8   9     </p>
+<p>第五轮比较总结：</p>
+<p>1.排序第5轮、比较1次，没有获得从小到大的排序  </p>
+<p>2.冒泡出了 2，由于还剩一个1，不用再比较了，至此通过5轮排序，完成整个排序。</p>
+<h3 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h3><p>通过以上五轮排序，若干次比较，我们有理由推断出一个结论：</p>
+<p>对于一个长度为N的数组，我们需要排序 N-1 轮，每 i 轮 要比较 N-i 次。对此我们可以用双重循环语句，外层循环控制循环轮次，内层循环控制每轮的比较次数。</p>
+<h4 id="Golang实现"><a href="#Golang实现" class="headerlink" title="Golang实现"></a>Golang实现</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line">func sort_bubble(arr []int) &#123;</span><br><span class="line"></span><br><span class="line">	len :&#x3D; len(arr)</span><br><span class="line">	for i:&#x3D;1;i&lt;len;i++&#123;</span><br><span class="line">		for j:&#x3D;0;j&lt;len-i;j++&#123;</span><br><span class="line">			if arr[j] &gt; arr[j+1]&#123;</span><br><span class="line">				arr[j],arr[j+1] &#x3D; arr[j+1],arr[j]</span><br><span class="line"></span><br><span class="line">			&#125;</span><br><span class="line">			fmt.Println(arr)</span><br><span class="line">		&#125;</span><br><span class="line">	&#125;</span><br><span class="line">	fmt.Println()</span><br><span class="line">	fmt.Println(arr)</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">func main() &#123;</span><br><span class="line">	arr :&#x3D; [...]int&#123;6,3,8,2,9,1&#125;</span><br><span class="line">	slice :&#x3D; arr[:]</span><br><span class="line">	fmt.Println(slice)</span><br><span class="line">	fmt.Println()</span><br><span class="line">	sort_bubble2(slice)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+
+<h4 id="PHP实现"><a href="#PHP实现" class="headerlink" title="PHP实现"></a>PHP实现</h4><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">function bubble($arr)</span><br><span class="line">&#123;</span><br><span class="line">    $count &#x3D; count($arr);</span><br><span class="line"></span><br><span class="line">    for ($i &#x3D; 1; $i &lt;$count;$i++)&#123;</span><br><span class="line">        for ($j &#x3D;0; $j&lt;$count-$i;$j++)&#123;</span><br><span class="line">            if($arr[$j] &gt; $arr[$j+1])&#123;</span><br><span class="line">                $tmp &#x3D; 0;</span><br><span class="line">                $tmp &#x3D; $arr[$j];</span><br><span class="line">                $arr[$j] &#x3D; $arr[$j+1];</span><br><span class="line">                $arr[$j+1] &#x3D; $tmp;</span><br><span class="line"></span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    print_r($arr);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">$arr &#x3D; array(6, 3, 8, 2, 9, 1);</span><br><span class="line">bubble($arr);</span><br></pre></td></tr></table></figure>
+
+
+
+
+      
+    </div>
+
+    
+    
+    
+      <footer class="post-footer">
+        <div class="post-eof"></div>
+      </footer>
+  </article>
+  
+  
+  
+
+      
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/08/07/Algorithm/InsertionSort/insertion/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -436,83 +748,6 @@
 <p> <a target="_blank" rel="noopener" href="https://blog.csdn.net/baidu_30000217/article/details/53311840">PHP实现排序算法—-快速排序（Quick Sort）、快排 - CSDN博客</a></p>
 <p> <a target="_blank" rel="noopener" href="https://www.cnblogs.com/firstForEver/p/5155393.html">快速排序的php实现 - 根号五 - 博客园</a></p>
 <p> 大话数据结构</p>
-
-      
-    </div>
-
-    
-    
-    
-      <footer class="post-footer">
-        <div class="post-eof"></div>
-      </footer>
-  </article>
-  
-  
-  
-
-      
-  
-  
-  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh-Hans">
-    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/08/06/hello-world/">
-
-    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
-      <meta itemprop="image" content="/images/avatar.gif">
-      <meta itemprop="name" content="Nolan Chic">
-      <meta itemprop="description" content="Action speak louder than words.">
-    </span>
-
-    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
-      <meta itemprop="name" content="Nolan's Notes">
-    </span>
-      <header class="post-header">
-        <h2 class="post-title" itemprop="name headline">
-          
-            <a href="/2017/08/06/hello-world/" class="post-title-link" itemprop="url">Hello World</a>
-        </h2>
-
-        <div class="post-meta">
-            <span class="post-meta-item">
-              <span class="post-meta-item-icon">
-                <i class="far fa-calendar"></i>
-              </span>
-              <span class="post-meta-item-text">Posted on</span>
-
-              <time title="Created: 2017-08-06 15:08:00" itemprop="dateCreated datePublished" datetime="2017-08-06T15:08:00+08:00">2017-08-06</time>
-            </span>
-              <span class="post-meta-item">
-                <span class="post-meta-item-icon">
-                  <i class="far fa-calendar-check"></i>
-                </span>
-                <span class="post-meta-item-text">Edited on</span>
-                <time title="Modified: 2020-09-16 18:47:34" itemprop="dateModified" datetime="2020-09-16T18:47:34+08:00">2020-09-16</time>
-              </span>
-
-          
-
-        </div>
-      </header>
-
-    
-    
-    
-    <div class="post-body" itemprop="articleBody">
-
-      
-          <p>Welcome to <a target="_blank" rel="noopener" href="https://hexo.io/">Hexo</a>! This is your very first post. Check <a target="_blank" rel="noopener" href="https://hexo.io/docs/">documentation</a> for more info. If you get any problems when using Hexo, you can find the answer in <a target="_blank" rel="noopener" href="https://hexo.io/docs/troubleshooting.html">troubleshooting</a> or you can ask me on <a target="_blank" rel="noopener" href="https://github.com/hexojs/hexo/issues">GitHub</a>.</p>
-<h2 id="Quick-Start"><a href="#Quick-Start" class="headerlink" title="Quick Start"></a>Quick Start</h2><h3 id="Create-a-new-post"><a href="#Create-a-new-post" class="headerlink" title="Create a new post"></a>Create a new post</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo new <span class="string">&quot;My New Post&quot;</span></span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/writing.html">Writing</a></p>
-<h3 id="Run-server"><a href="#Run-server" class="headerlink" title="Run server"></a>Run server</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo server</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/server.html">Server</a></p>
-<h3 id="Generate-static-files"><a href="#Generate-static-files" class="headerlink" title="Generate static files"></a>Generate static files</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo generate</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/generating.html">Generating</a></p>
-<h3 id="Deploy-to-remote-sites"><a href="#Deploy-to-remote-sites" class="headerlink" title="Deploy to remote sites"></a>Deploy to remote sites</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">$ hexo deploy</span><br></pre></td></tr></table></figure>
-
-<p>More info: <a target="_blank" rel="noopener" href="https://hexo.io/docs/deployment.html">Deployment</a></p>
 
       
     </div>
@@ -1067,7 +1302,7 @@
       <div class="site-state-item site-state-posts">
           <a href="/archives/">
         
-          <span class="site-state-item-count">18</span>
+          <span class="site-state-item-count">20</span>
           <span class="site-state-item-name">posts</span>
         </a>
       </div>
